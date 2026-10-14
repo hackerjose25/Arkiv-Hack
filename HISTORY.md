@@ -81,3 +81,11 @@ Statuses: NOT STARTED / IN PROGRESS / BLOCKED / VERIFIED. **VERIFIED** requires 
 3. Entity payload size / maximum useful dashboard config complexity and optimal expiration/extension flow.
 4. `watchEntityEvents` event semantics for relevant query result sets versus manual polling.
 5. How the public share page resolves an entity key reliably with public client.
+
+### Session 002 start — 2026-10-14 22:59 IST — Codex
+Starting commit: 6265194; clean working tree. Goal: M0 scaffold and verify M1 direct Tiramisu reads, then continue roadmap. Existing project contains documentation only. Blockers: no wallet connected or signed transactions; SDK not installed yet. Hub AI tools lists MCP as coming soon; browser access hit a certificate error (not bypassed).
+
+
+### Session 002 progress — 2026-10-14 IST — Codex
+Scaffold and production build passed on Next 15.5.27 / React 19.3.1 / Arkiv SDK 0.8.1 / viem 2.57.7. Query compiler, explorer, scoped chart transforms, strict dashboard payload, wallet publication journal, public/embed routes implemented; live behavior NOT verified. M1 blocked: direct eth_chainId fails TLS UNABLE_TO_VERIFY_LEAF_SIGNATURE in Node; PowerShell independent check fails PartialChain. No TLS bypass, no write, no entity/tx evidence. Official skills checked at b18c19a80c95a8a077f594f5977889244f225fdb. SDK has no server sort; page-only sort implemented. First offline tests: 18 passed, 1 assertion incorrectly expected && instead of SDK AND; corrected. Sandbox Vitest temp rename EPERM worked outside sandbox. Test runner upgraded to 4.1.11 for security fixes; PostCSS override 8.5.30; remaining audit advisories are ESLint glob dependency chain (braces has no patched release). Next: finish tests, seed signing preparation, browser QA, final evidence ledger.
+

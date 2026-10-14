@@ -1,82 +1,77 @@
-# Arkiv schema — PROPOSED, not yet deployed
+# ArkivSight schema — runtime v1, writes pending
 
-**Status:** Design only as of 2026-10-14. Every item here must be cross-checked with installed Arkiv SDK 0.8.x, live sample entities, and exact working queries. After implementing, replace hypothetical fields and attach transaction/entity references. The final file must describe **actual** deployed schema and query paths.
+Updated 14 October 2026, Codex. SDK 0.8.1 / viem 2.57.7. This file describes implemented serializers and verified read operations. **No ArkivSight entities have yet been written.** The transaction ledger remains empty until wallet-approved live verification.
 
-## Rules
-- Put filterable typed values in Arkiv **attributes**; descriptive and structured data in JSON **payload**.
-- Every record belongs to `app: "arkivsight"`, with `kind` distinguishing entity types; avoid pretending `kind` is a built-in type.
-- Avoid user personal information in both attributes and payload, including hashes. All seed data synthetic.
-- Schema version each dashboard spec. Treat entity payloads as untrusted and validate them with Zod.
-- Expiration is real. Set intentional lifetimes, show expiry/renewal requirements, and avoid promising permanent archives.
+## Indexed attributes versus payload
 
-## Entity A: Synthetic demo metric (`kind=demo_metric`)
-**Purpose:** stable public dataset to demonstrate query, sorting, paging, aggregation and reload.
+Application attribute names are lowercase `[a-z][a-z0-9_]*`, at most 32 characters. Strings use SDK `str` (implicit bare strings on writes); integers use `i32`. Payload JSON is not queryable. `$creator`, `$owner`, `$key` and `$expiresAt` are authoritative system metadata with types addr, addr, key and u64. Returned creator/owner are taken from entity metadata, never identically named custom attributes. Created/expiry fields are block heights, not timestamps.
 
-**Proposed attributes:** `app: string = "arkivsight"`, `kind: string = "demo_metric"`, `dataset: string = "sample_metrics_v1"`, `category: string`, `region: string`, `period: number` (UTC epoch or YYYYMM numeric consistently), `value: number`, `sequence: number`. Use numeric attributes for numeric range queries.
+## Synthetic metric
 
-**Payload:** `{"label":"Synthetic metric", "description":"Demo-only fabricated values", "unit":"requests"}`. **Expiration:** 30 days initially; may extend if docs and wallet permissions allow. State if dataset has missing/expired entities.
+`lib/wallet.ts: syntheticParameters()` prepares 12 records; all values are fictional.
 
-**Expected queries to validate (DSL intent, not literal SDK calls):**
-- `app == arkivsight AND kind == demo_metric`
-- `dataset == sample_metrics_v1 AND category == A`
-- `region == Chennai AND value >= 10 AND value <= 100`, sort by `period` if supported, paginate via returned cursor.
+| Attribute | Type | Value |
+|---|---|---|
+| app | str | arkivsight |
+| kind | str | demo_metric |
+| dataset | str | sample_metrics_v1 |
+| category | str | Compute / Storage / Indexing |
+| region | str | Chennai / Mumbai |
+| period | i32 | YYYYMMDD: 20261001–20261004 |
+| value | i32 | `20 + (sequence * 17) % 90` |
+| sequence | i32 | 0–11 |
 
-## Entity B: Dashboard definition (`kind=dashboard`)
-**Purpose:** dashboard publishing and independent public retrieval via entity key, no custom database.
+Payload: `{ "label": "Synthetic metric", "description": "Fabricated demonstration values; no personal data", "unit": "requests" }`. Content type application/json; readonly true; permissionlessExtension false; requested expiration `ExpirationTime.fromDays(30)`. Actual expiry must come from read-back. One atomic `executeBatch({creates})`; existing creator-scoped dataset is checked first. No claimed permanent retention or auto-renewal.
 
-**Proposed attributes:** `app: "arkivsight"`, `kind: "dashboard"`, `schemaVersion: 1`, `publicId: string` (non-PII opaque ID), `displayCategory: string`, optional `publishedAt: number`.
+## Dashboard definition
 
-**Payload shape (strict versioned JSON):**
+| Attribute | Type | Value |
+|---|---|---|
+| app | str | arkivsight |
+| kind | str | dashboard |
+| schema_version | i32 | 1 |
+| public_id | str | random UUID |
+
+Payload validated by `lib/dashboard.ts`: strict version 1; network tiramisu; title 1–100 characters; description <=500; one `query`; 1–8 widgets with unique IDs; refreshSeconds 30–3600; ISO createdAt. Maximum encoded JSON 32 KiB. Unknown fields rejected. Readonly true; permissionlessExtension false; application/json; requested expiration 90 days. This replaces the proposal's camelCase indexed fields and multiple query/layout arrays before any deployment, so there is no on-chain migration.
+
+Example payload (schema fixture, NOT an on-chain artifact):
+
 ```json
-{
-  "version": 1,
-  "title": "Sample Arkiv Metrics",
-  "description": "Demonstration dashboard with synthetic records",
-  "network": "tiramisu",
-  "queries": [
-    {
-      "id": "q1",
-      "filters": [
-        {"field": "app", "op": "eq", "value": "arkivsight"},
-        {"field": "kind", "op": "eq", "value": "demo_metric"}
-      ],
-      "limit": 100,
-      "sort": [{"field": "period", "direction": "asc"}]
-    }
-  ],
-  "widgets": [
-    {"id": "w1", "queryId": "q1", "type": "bar", "groupBy": "category", "measure": "value", "aggregation": "sum", "title": "Demo totals"}
-  ],
-  "layout": [{"widgetId":"w1", "x":0, "y":0, "w":6, "h":4}],
-  "refreshSeconds": 60
-}
+{"version":1,"network":"tiramisu","title":"Metrics","description":"Synthetic dataset","query":{"filters":[{"field":"app","type":"str","op":"eq","value":"arkivsight"},{"field":"kind","type":"str","op":"eq","value":"demo_metric"}],"limit":25},"widgets":[{"id":"overview","title":"Requests by category","type":"bar","groupBy":"category","measure":"value","aggregation":"sum"}],"refreshSeconds":60,"createdAt":"2026-10-14T12:00:00.000Z"}
 ```
-**Expiration:** 90 days planned; UI must show expiry and avoid broken-share promises. Later renewal by authorized owner if valid. Do not store arbitrary URLs, code, secrets or large data dumps in definitions.
 
-**Expected queries:** lookup by actual entity key for shared public page; list by `app` + `kind` (+ `$creator`/`createdBy` if SDK supports) for owner dashboards. Canonical creator/owner are Arkiv metadata, NOT custom attributes.
+Widget types: table, bar, line, kpi. Aggregation: count/sum/average. Array order is layout order, with responsive CSS grid. Every widget uses the same query. No scripts, URLs, HTML, arbitrary iframe settings or payload-based query fields in this contract.
 
-## Optional Entity C: Dashboard revisions (`kind=dashboard_revision`)
-Only implement after M4. New snapshot per revision; attribute `parentId`, numeric `revision`, optional `publishedAt`; payload contains validated dashboard spec and previous reference. Expiration 90 days. This does **not** automatically guarantee immutable history if owner can delete entities; don't promise stronger guarantees than tested.
+## Actual queries
 
-## Query compiler contract
-`QuerySpec = { filters: {field, op, value}[], sort?: {...}[], limit: number, cursor?: string }`.
-- Allowlist field names discovered from attributes; prevent arbitrary text from becoming executable code.
-- Map UI operators to actual SDK filter functions verified from installed version.
-- Prevent invalid mixed-type ranges, excess page sizes and unsupported sorts.
-- Enforce mandatory demo namespace where relevant (e.g. `app=arkivsight`) but permit exploring other public datasets deliberately.
-- Track `fetchedCount`, pagination completeness and `scope: page|complete` for honest aggregations.
+`QuerySpec = { filters: {field,type,op,value:string}[], limit:number }`. 1–12 AND conditions, limit 1–100. Types: str/i32/u64/u256/dec/bool/addr/key. Constructors validate exact numeric ranges; bigint typed values are parsed without Number conversion. Prefix is string-only; range is numeric-only.
 
-## On-chain evidence ledger — fill only after genuine writes
-| Type | Writer wallet (public) | Entity key | Tx hash | Expiry observed | Query tested | Verification date |
-|---|---|---|---|---|---|---|
-| demo_metric | NOT YET | NOT YET | NOT YET | NOT YET | NOT YET | — |
-| dashboard | NOT YET | NOT YET | NOT YET | NOT YET | NOT YET | — |
+Default rendered query: `app = str('arkivsight') AND kind = str('demo_metric')`.
 
-## SDK/API verification checklist
-- [ ] Create synthetic record with valid typed attribute values.
-- [ ] Query compound predicates from public client (no wallet required to read).
-- [ ] Confirm cursor pagination and sort behavior.
-- [ ] Inspect entity `key`, `$creator`, `$owner` as actual returned metadata.
-- [ ] Save and independently retrieve dashboard payload by key.
-- [ ] Confirm expiry handling and optional extension semantics.
-- [ ] Record exact SDK version + tx/explorer references.
+`runQuery()` reads a fresh head, then selects key, attributes, creator, owner, createdAt and expiresAt using `.atBlock(block).limit(limit).fetch()`. No payload in the table projection. Next page uses immutable `page.next()`; prior pages remain readable. Changing filters invalidates navigation until rerun. Cursor failures ask for a fresh query. Sorting is client-side **current page only**; SDK 0.8.1 has no server ORDER BY. Counts and chart totals are always current-page counts, never a global chain count.
+
+Public dashboard: `getEntity(key)` (SDK performs `$key = key(...)`, full projection, limit 1), verify app/kind/schema_version/contentType, size-bound and Zod-validate payload, run its query. Payload inspection is capped at 64 KiB after SDK retrieval; this does not cap the provider's HTTP body before parsing.
+
+## Live read evidence
+
+`npm run test:live -- --public-sample`, 2026-10-14 17:52 UTC (23:22 IST), chain ID 7738577. Demo query: block 575290, 0 records, no next page.
+
+Deliberate metadata-only sample: `$expiresAt >= u64(575291)`, atBlock 575291, limit 1. Only key/creator/owner/expiresAt selected. `hasNextPage()` true; `.next()` retained snapshot 575291 and returned a distinct key.
+
+- First key: `0x8698a23494ad282fcf80edd546ad0670d1f6a67d2a12248b394077aeffc28e6e`
+- Creator and owner: `0x679B5Ab1cd4B488D73025d0D72d4017Fa2d97B59`
+- Observed expiry block: 576190
+- Second key: `0xbaa578cf5212bed7cff354883fe3d18f91c2c13f42b24f47c66593b173b37863`
+
+These are third-party public metadata observations, **not project-written artifacts**. No payload or user-defined attributes were fetched in the sample. References can expire; this record proves the observed test, not current availability. Explorer entity URL patterns have not been verified, so no guessed entity links are shown.
+
+## Project write ledger
+
+| Type | Writer | Entity key | Tx hash | Expiry |
+|---|---|---|---|---|
+| demo_metric | PENDING wallet | PENDING | PENDING | PENDING |
+| dashboard | PENDING wallet | PENDING | PENDING | PENDING |
+
+Next: user installs and funds an EOA wallet, signs seed, record actual read-back; then publish/read dashboard independently. Do not mark M1/M4 complete before this evidence.
+
+Official sources: https://docs.arkiv.network/typescript-sdk/querying-data/ and installed SDK source under `src/query`, `src/actions/wallet`, `src/types/entity.ts`.

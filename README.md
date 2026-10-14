@@ -1,146 +1,86 @@
 # ArkivSight — Query-to-Dashboard Studio
 
-> Turn Arkiv entities into live, shareable, embeddable dashboards—without writing query or frontend code.
+Turn public Arkiv entities into queries, visualizations and wallet-owned dashboards.
 
-**Status: DOCUMENTATION ONLY (14 October 2026).** No application, integration, tests, deployed URL, or on-chain transaction has yet been verified. Do not claim anything is implemented until independently tested. Read [AGENTS.md](AGENTS.md), [HISTORY.md](HISTORY.md), [HACKATHON.md](HACKATHON.md) before coding.
+**14 October 2026: working local implementation; live reads verified; signed writes and public deployment pending.** This is an independent MIT tool, not an official Arkiv product. See [HISTORY.md](HISTORY.md) for verified milestones and [HACKATHON.md](HACKATHON.md) for submission gates.
 
-## 1. Problem and product
+## Run locally
 
-Developers typically use Arkiv's SDK to query, fetch, transform, and visualize on-chain entities. ArkivSight turns this into a five-step no-code workflow:
-1. **Build queries:** select entity type / project namespace, typed attributes, operators, sorts, and pagination visually.
-2. **Explore real results:** run queries against Tiramisu; inspect entities, attributes, payload previews, creator, owner, keys, and query details.
-3. **Visualize automatically:** recommend safe table, KPI, bar, line, and pie views from returned data with explicit aggregations.
-4. **Compose dashboards:** add/edit/reorder/resize widgets and configure poll-refresh, titles, and descriptions.
-5. **Publish and embed:** persist non-secret dashboard definitions as Arkiv entities; offer public view URLs and isolated iframe widget embeds, re-querying Arkiv without a custom indexer.
+Use **Node 22.13+ (24 LTS recommended)** and npm. No environment secrets are required.
 
-**Tagline:** The missing read-side interface for Arkiv. **Audience:** Arkiv builders, hackathon teams, analysts and non-developers who want to explore public Arkiv datasets.
-
-## 2. Goals and non-goals
-
-### Required MVP
-- A public judge-accessible URL with a readable demo dashboard even before wallet connection.
-- Query builder with typed `eq`, numeric/date range (where supported), compound filters, sort, limits and cursor pagination; constrain queries to manageable cost and validate types.
-- Real Tiramisu query using `@arkiv-network/sdk` 0.8.x; no fake blockchain success, no chart filled with fake data labeled live.
-- Explicit `no results`, `schema mismatch`, `RPC failed`, `loading`, `stale data` UX.
-- Schema discovery from a real query's attributes / JSON payload; display schema confidence and avoid treating arbitrary payload fields as indexed filters.
-- Dataset view with tabular entity metadata and drill-down; creator (`$creator`) must come from Arkiv's canonical fields, not user-defined attributes.
-- Charts: table, KPI count/sum/average, bar and line; pie if time allows. State aggregation scope (fetched page vs entire dataset); never label a page-only count as global.
-- Save a dashboard definition on Tiramisu with creator-signed write; retrieve it from another device/browser without the app's private database.
-- Share route `/d/[key]`, embed `/embed/[key]?widget=...`, usable iframe snippet; query data live on open and at polling intervals. Pause while hidden and rate-limit refresh. Read-only viewers need no wallet.
-- Public open-source reference/example showing that another application can reuse an embed or configuration contract without asking permission.
-- Documentation, MIT license, demo, test suite and reproducible friction report.
-
-### Later only if MVP works
-- Drag-and-drop resizing via react-grid-layout, chart themes, saved query presets, multiple dashboard versions, WebSocket `watchEntityEvents` if confirmed viable, live event badge, CSV export, typed schema contracts, permalink revision history.
-
-### Explicit non-goals
-- Arbitrary SQL, server-side joins, a universal custom indexer, guaranteed real-time streaming, unrestricted full-chain scans, authentication-only/private datasets, personal data collection, paid analytics services, on-chain secrets or exposing RPC access credentials.
-
-## 3. Tech stack (free/open-source first)
-
-| Concern | Default | Notes |
-|---|---|---|
-| App | Next.js App Router + React + TypeScript | Version locked in package manifest after scaffolding |
-| Styling | Tailwind CSS, shadcn/ui (Radix), Lucide | Accessible, responsive, premium dark/light design |
-| Visualization | Apache ECharts (`echarts-for-react` optional) | Tables, bar/line/pie/KPI |
-| Grid | CSS grid initially; react-grid-layout later | Do not block MVP on drag-drop |
-| Data validation | Zod | Strict versioned dashboard schemas and filters |
-| Chain | Arkiv Tiramisu, chain ID `7738577` | Query via Arkiv public client SDK |
-| Arkiv SDK | `@arkiv-network/sdk` 0.8.x, `viem` | Verify exact APIs against installed version/docs |
-| Wallet writes | MetaMask / EIP-1193 + SDK wallet client | No shared private key in browser/server |
-| Tests | Vitest + Testing Library; Playwright smoke | Mock-only tests explicitly labeled; separate live network tests |
-| Deploy | Vercel Hobby or compatible free host | Check free-tier limitations; keep live through judging |
-
-**Network:** `https://rpc.tiramisu.db-chain.testnet.arkiv.network`; WebSocket `wss://rpc.tiramisu.db-chain.testnet.arkiv.network`; explorer `https://tiramisu.explorer.arkiv.network`; faucet `https://hub.arkiv.network/`. RPC is a public service with usage policies and limits. Verify access-key requirements from live docs before implementation.
-
-## 4. Architecture and boundaries
-
-```
-User -> Next.js UI (Query Builder / Explorer / Dashboard Studio)
-                |                          |
-                v                          v
-     Typed query compiler             Dashboard config editor
-                |                          |
-                v                          v
-       Arkiv public SDK read       Wallet-signed Arkiv entity write
-                |                          |
-                +----------> Tiramisu <----+
-                                  |
-                      Public share / embed page
-                          loads config by key,
-                         re-runs source queries
-```
-
-**No custom indexer** = the product queries Arkiv's built-in indexed attributes directly. Client-side/chart aggregations only cover the fetched dataset; explicitly label sampling/truncation and pages. Configurations contain safe query specifications and widget definitions, not live result caches by default. No central database required for core use.
-
-## 5. Product flows and UX
-
-**Main UI:** left navigation (Discover, Query Studio, Dashboards), persistent active network badge, dataset/attribute sidebar, visual query controls, center preview table/chart, right properties inspector; rich empty/loading/error states; keyboard focus and mobile layout. Dark professional theme with restrained teal/violet accents, crisp typography and legible dense data tables. Branding must not look like an Arkiv-operated official product.
-
-**Demo story:** choose a seeded synthetic public dataset -> inspect typed fields -> filter (`project=arkivsight_demo`, `kind=metric`) -> visualize grouped categories and a time-series -> save dashboard to Tiramisu -> open public link in private browsing window -> paste iframe in independent demo page -> change dataset with wallet-authorized write -> verify refresh updates the chart. All outputs must be real results. Seed sample data can be **synthetic but actually written to Tiramisu**; label them as demo data.
-
-**Trust cues:** transaction/record explorer links, canonical creator and owner, last successful refresh, errors, result count and aggregation limitations. No claim that creator is institutionally verified without a trusted allowlist.
-
-## 6. Proposed data contracts (must adjust against verified SDK)
-
-See [`arkiv/schema.md`](arkiv/schema.md) for full entities, indexed attributes, example predicates, expiry and validation rules.
-- `arkivsight_dataset`: synthetic demo records (typed numeric metrics, category, time bucket; public payload).
-- `arkivsight_dashboard`: layout, widget configs, named query DSL and refresh interval; versioned JSON payload, indexed `app`, `kind`, `schemaVersion`, `publicId`.
-- Optional `arkivsight_dashboard_revision`: append-only snapshots when revising a shared dashboard; never silently overwrite an existing public revision without explaining it.
-- `DashboardSpec` (frontend data model): `version`, `title`, `description`, `network`, `queries[]`, `widgets[]`, `layout[]`, `refreshSeconds`, `createdAt`; Zod-validate on both load and save, cap payload and widget count.
-
-**Never store wallet private keys, account secrets, hashed personal data, raw untrusted HTML, sensitive personal data or privileged credentials on Arkiv.** Treat all public Arkiv payloads as untrusted and sanitize rendered content.
-
-## 7. Suggested repository structure
-
-```
-arkivsight/
-  app/(studio)/query/page.tsx
-  app/(studio)/dashboards/page.tsx
-  app/d/[key]/page.tsx
-  app/embed/[key]/page.tsx
-  components/query/  components/charts/  components/dashboard/
-  lib/arkiv/  lib/query/  lib/charts/  lib/dashboard/
-  tests/  e2e/
-  arkiv/schema.md  arkiv/friction.md
-  README.md  AGENTS.md  HISTORY.md  HACKATHON.md
-  LICENSE  .env.example
-```
-
-Exact structure may change for technical reasons; document deviations in HISTORY.md.
-
-## 8. Milestones and definition of done
-
-| ID | Deliverable | Acceptance evidence |
-|---|---|---|
-| M0 | App scaffold + docs | `npm run build`, lint, local instructions, MIT license |
-| M1 | Real Arkiv access | Direct query of real Tiramisu entities incl. inspectable keys, errors, wallet/tx when seeding |
-| M2 | Visual query builder + explorer | Build filters without code; page results; correct typed mapping and empty states |
-| M3 | Charts + stats | Chart from fetched data; appropriate aggregations / caveats; test fixtures |
-| M4 | Builder + persistence | Wallet signs dashboard entity; open its key elsewhere; refresh survives reload |
-| M5 | Share + embed | Independent no-auth browser, iframe on demo page; polling; safe query failure |
-| M6 | Quality + submission | E2E smoke, live deployment, schema/friction, reproducibility, demo <=3 min |
-
-**Hard gate:** no presentation-only mock may be shown as a working Arkiv integration. The app is not complete until actual Tiramisu query evidence, dashboard creation transaction and independent public read are demonstrated.
-
-## 9. Development commands (planned, verify after scaffold)
-
-```bash
-npm install
+```sh
+npm ci
 npm run dev
-npm run lint
-npm run test
-npm run build
 ```
 
-No install scripts or tests exist at the time this file is written. Agents must add and validate them instead of asserting they work.
+Open http://127.0.0.1:3000. Run only one Next process per checkout; stop development before building. Fonts are served locally.
 
-## 10. Sources and compliance
+```sh
+npm run lint
+npm run typecheck
+npm test
+npm run build
+npm run start
+npm run test:live
+npm run test:live -- --public-sample
+```
 
-- Hackathon overview: https://arkiv.devfolio.co/overview
-- Canonical rules: https://github.com/Arkiv-Network/global-tour-stop-pre-devcon
-- Scoring rubric: https://github.com/Arkiv-Network/global-tour-stop-pre-devcon/blob/main/docs/scoring-rubric.md
-- Submission checklist: https://github.com/Arkiv-Network/global-tour-stop-pre-devcon/blob/main/docs/submission-checklist.md
-- Arkiv docs: https://docs.arkiv.network/
+The optional public sample reads two pages of canonical entity metadata only. It does not seed anything. The initial demo query can legitimately return zero records until a user seeds the dataset.
 
-See HACKATHON.md for selection strategy and gates. The canonical rules take precedence in case of discrepancy.
+## What is implemented
+
+- No-code AND filters with exact SDK types: str, i32, u64, u256, dec, bool, addr, key; equality, numeric comparisons, and string prefixes.
+- Direct browser-to-Tiramisu reads; 10–100 rows per page, snapshot-pinned cursor pagination, canonical creator/owner, bounded payload inspection, and observed attribute schema.
+- Table, bar, line and KPI views; count, sum and average; page-only sorting and aggregation. Large integers beyond safe JS chart precision are excluded. Decimal charts use approximate JavaScript arithmetic.
+- Dashboard composition: one shared query, up to eight ordered widgets, titles, description, and 30–3600-second polling. This v1 deliberately uses a CSS grid and one query instead of the originally proposed multi-query/freeform layout.
+- Versioned Zod-validated definitions; browser-wallet publication, readonly creation, receipt journal and strict read-back. **Real wallet execution remains untested.**
+- `/d/[key]` and `/embed/[key]?widget=overview` public readers. They require no wallet, pause polling while hidden, cancel on unmount, and back off after failure. Offline browser fixtures are not on-chain proof.
+- [Independent iframe consumer](examples/independent-consumer/index.html), served on another origin using any static file server.
+
+No backend database, private indexer, API keys or shared signing account. Payloads render as text; no arbitrary scripts or HTML are executed. A namespace is not proof of identity: use the `$creator` filter when choosing a trusted publisher. Creator identifies the original creator, not institutional verification.
+
+## First real demo
+
+1. Open the app in a browser with an EIP-1193 EOA wallet such as MetaMask. Install from the wallet's official site; never share its recovery phrase or private key.
+2. Connect to Tiramisu, chain `7738577`. Obtain test GLM through the [Arkiv Hub faucet](https://hub.arkiv.network/faucet).
+3. Expand **Need a dataset? Publish synthetic demo metrics**. Review the 12 synthetic records / 30-day lifetime description, check consent, and approve the transaction fee in your wallet. The app checks for existing records from your wallet before seeding.
+4. Record the actual transaction and 12 entity keys shown only after read-back. Run the default `app=arkivsight AND kind=demo_metric` query. Add `$creator`, type `addr`, equal to your address to isolate your records.
+5. Select Visualize, group by `category`, measure `value`, aggregation `sum`. Add to dashboard, name it, and publish. Publishing creates a readonly snapshot with an approximately 90-day lifetime.
+6. Record the displayed transaction, entity key and actual expiry block. Open the public link in a separate browser with no wallet. Load its iframe from the independent example. Verify refresh after a separate user-approved data write.
+
+Do not automatically retry an uncertain write. **Publication recovery** displays the saved intent/hash/keys. The journal blocks another write for that account until the original outcome is reconciled. Recovery is currently manual: inspect the original transaction and compare entities with the saved parameters before clearing a journal. Keep the journal; clearing it without reconciliation can duplicate writes. Web Locks serialize this app's tabs, not other apps using the same wallet.
+
+## Verification boundaries
+
+Live SDK 0.8.1 reads succeeded on 14 October at block 575291, including two distinct keys and canonical creator/owner. The ArkivSight demo namespace was empty. **No project wallet, seed transaction, dashboard transaction, deployed URL or live independent embed is yet verified.** Full M1/M4/M5 completion and hackathon readiness depend on those steps.
+
+Browser tests use explicitly labeled offline RPC fixtures for populated charts and sharing. For the suite:
+
+```sh
+npx playwright install chromium
+npm run test:e2e
+```
+
+On Windows, installed Edge can be used with `$env:PLAYWRIGHT_CHANNEL='msedge'`. If an existing server is already running, set `$env:E2E_EXISTING_SERVER='1'`; otherwise Playwright starts development. Do not run build and browser development simultaneously.
+
+The original college Wi-Fi connection failed certificate validation. Live access later succeeded without disabling TLS. Switch to a trusted working network if this recurs; never set `NODE_TLS_REJECT_UNAUTHORIZED=0`.
+
+## Architecture and reuse
+
+- `lib/query.ts`: validated query DSL mapped to installed SDK constructors and operators.
+- `lib/arkiv.ts`: public client and page snapshots; no payload fetching in table queries.
+- `lib/charts.ts`: page-scoped transforms, independent of React.
+- `lib/dashboard.ts`: strict JSON contract and safe iframe builder.
+- `lib/wallet.ts`: injected-wallet checks, synthetic seed, serialized writes, journal and read-back.
+- `components/`: studio, chart renderer, seed UI, independent public reader.
+- `tests/`, `e2e/`: offline logic and browser regressions; `scripts/live-read.ts`: separate live proof.
+
+The checked-in lockfile pins SDK **0.8.1**, viem **2.57.7**, Next **15.5.27**, React **19.3.1**, ECharts **6.1.0**, and Zod **4.6.7**. Styling uses local CSS and locally hosted Fontsource fonts. The PostCSS 8.5.30 override fixes advisories in Next's transitive version. Standard TypeScript ESLint rules avoid the unpatched braces dependency in Next's lint plugin; Next emits an informational missing-plugin warning during build. All source is new on top of documentation baseline `6265194`; third-party libraries and fonts are reused with their respective licenses.
+
+Official Arkiv skills were read at `Arkiv-Network/skills` commit `b18c19a80c95a8a077f594f5977889244f225fdb`. No Arkiv MCP connection is configured in this agent host; the SDK is sufficient for actual entity operations. The guidance clone is ignored local reference material, not a runtime dependency.
+
+## Remaining roadmap
+
+Install/fund the user's wallet; verify seed and dashboard writes; independently verify live share/embed; add widget editing/resizing and multiple queries if needed; finish keyboard dialog handling and hostile-input tests; deploy with the user's approval; record public MIT repo/demo links, <=3-minute video and submission evidence. Do not claim a deployed, complete or prize-ready application yet.
+
+Sources: [Arkiv docs](https://docs.arkiv.network/), [AI tools](https://hub.arkiv.network/ai-tools), [schema](arkiv/schema.md), [measured friction](arkiv/friction.md), [official event](https://github.com/Arkiv-Network/global-tour-stop-pre-devcon).
