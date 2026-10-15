@@ -13,7 +13,7 @@ npm ci
 npm run dev
 ```
 
-Open http://127.0.0.1:3000. Run only one Next process per checkout; stop development before building. Fonts are served locally.
+Open http://127.0.0.1:3000 for the single-viewport video landing page, then **Get Started** to enter the existing app at http://127.0.0.1:3000/studio. Run only one Next process per checkout; stop development before building. The landing and app share a monochrome theme. Inter and Bubbledot load from the requested external font CDNs with system/local fallbacks; the supplied CloudFront video has a local static poster if unavailable. Background motion can be paused and honors reduced-motion preferences.
 
 ```sh
 npm run lint
@@ -30,7 +30,7 @@ The default live check reads one bounded page across public publishers. The opti
 ## What is implemented
 
 - No-code AND filters with exact SDK types: str, i32, u64, u256, dec, bool, addr, key; equality, numeric comparisons, and string prefixes.
-- **Public Database** sidebar section and default landing view: automatically reads live public entities across publishers, displays indexed attributes and canonical creator/owner, inspects records on demand, and walks cursor pages. Open its query in the studio to build charts.
+- **Public Database** sidebar section and default workspace view: automatically reads live public entities across publishers, displays indexed attributes and canonical creator/owner, inspects records on demand, and walks cursor pages. Open its query in the studio to build charts.
 - Zero user filters are supported. Remove the last condition or click **Clear all filters**. SDK 0.8.1 requires an indexed predicate, so the match-all equivalent is `$expiresAt >= u64(0)`, including every currently queryable entity without an app/dataset/creator restriction.
 - Direct browser-to-Tiramisu reads; 10–100 rows per page, snapshot-pinned cursor pagination, canonical creator/owner, bounded payload inspection, and observed attribute schema.
 - Table, bar, line and KPI views; count, sum and average; page-only sorting and aggregation. Large integers beyond safe JS chart precision are excluded. Decimal charts use approximate JavaScript arithmetic.
@@ -81,7 +81,7 @@ The original college Wi-Fi connection failed certificate validation. Live access
 - `components/`: public database browser, query studio, chart renderer, MCP observation panel and independent public reader.
 - `tests/`, `e2e/`: offline logic and browser regressions; `scripts/live-read.ts`: separate live proof.
 
-The checked-in lockfile pins SDK **0.8.1**, viem **2.57.7**, Next **15.5.27**, React **19.3.1**, ECharts **6.1.0**, and Zod **4.6.7**. Styling uses local CSS and locally hosted Fontsource fonts. The PostCSS 8.5.30 override fixes advisories in Next's transitive version. Standard TypeScript ESLint rules avoid the unpatched braces dependency in Next's lint plugin; Next emits an informational missing-plugin warning during build. All source is new on top of documentation baseline `6265194`; third-party libraries and fonts are reused with their respective licenses.
+The checked-in lockfile pins SDK **0.8.1**, viem **2.57.7**, Next **15.5.27**, React **19.3.1**, ECharts **6.1.0**, and Zod **4.6.7**. Styling uses local CSS, CDN Inter/Bubbledot fonts and locally hosted fallback fonts. The PostCSS 8.5.30 override fixes advisories in Next's transitive version. Standard TypeScript ESLint rules avoid the unpatched braces dependency in Next's lint plugin; Next emits an informational missing-plugin warning during build. All source is new on top of documentation baseline `6265194`; third-party libraries and fonts are reused with their respective licenses.
 
 Official Arkiv skills were read at `Arkiv-Network/skills` commit `b18c19a80c95a8a077f594f5977889244f225fdb`. On 15 October, an explicitly authorized direct MCP session at `https://mcp.arkiv.network/devfolio` negotiated protocol 2025-06-18 and verified live metadata with server 1.1.24. No Codex plugin or host connector was installed; npm dependencies and lockfile were unchanged. The guidance clone is ignored local reference material.
 

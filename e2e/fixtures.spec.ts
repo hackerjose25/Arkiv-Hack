@@ -98,7 +98,7 @@ test("OFFLINE fixture: query pagination, charts and dashboard composition", asyn
   page,
 }) => {
   await mockRPC(page);
-  await page.goto("/");
+  await page.goto("/studio");
   await page.getByRole("button", { name: "Query studio", exact: true }).click();
   await page.getByRole("button", { name: "Run query", exact: true }).click();
   await expect(
@@ -132,7 +132,7 @@ test("OFFLINE fixture: entity dialog traps focus, closes on Escape and restores 
   page,
 }) => {
   await mockRPC(page);
-  await page.goto("/");
+  await page.goto("/studio");
   await page.getByRole("button", { name: "Query studio", exact: true }).click();
   await page.getByRole("button", { name: "Run query", exact: true }).click();
   const entity = page.locator(".entity-link").first();
@@ -217,7 +217,7 @@ test("OFFLINE fixture: public route and widget embed load without wallet", async
 test("capture honest empty studio preview", async ({ page }) => {
   await mockRPC(page);
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto("/");
+  await page.goto("/studio");
   await page.getByRole("button", { name: "Query studio", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "From query to clarity." }),
@@ -241,7 +241,7 @@ test("OFFLINE fixture: studio refreshes every 30 seconds and pauses for changed 
     )
       reads++;
   });
-  await page.goto("/");
+  await page.goto("/studio");
   await page.getByRole("button", { name: "Query studio", exact: true }).click();
   await page.getByRole("button", { name: "Run query", exact: true }).click();
   await expect(
@@ -279,7 +279,7 @@ test("OFFLINE fixture: Public Database browses all publishers, paginates and ope
     )
       expressions.push(request.postDataJSON().params[0]);
   });
-  await page.goto("/");
+  await page.goto("/studio");
   await expect(
     page.getByRole("heading", { name: "Public Database", exact: true }),
   ).toBeVisible();

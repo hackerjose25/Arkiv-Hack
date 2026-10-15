@@ -6,7 +6,7 @@ test("studio validates filters and reports network failures honestly", async ({
     "**/rpc.tiramisu.db-chain.testnet.arkiv.network/**",
     (route) => route.abort("failed"),
   );
-  await page.goto("/");
+  await page.goto("/studio");
   await page.getByRole("button", { name: "Query studio", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "From query to clarity." }),
@@ -32,7 +32,7 @@ test("mobile does not overflow the viewport", async ({ page }) => {
     "**/rpc.tiramisu.db-chain.testnet.arkiv.network/**",
     (route) => route.abort("failed"),
   );
-  await page.goto("/");
+  await page.goto("/studio");
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,

@@ -54,24 +54,24 @@ export default function Chart({
       xAxis: {
         type: "category",
         data: data.map((p) => p.name),
-        axisLabel: { color: "#8797ad", width: 90, overflow: "truncate" },
-        axisLine: { lineStyle: { color: "#293344" } },
+        axisLabel: { color: "#9b9b9b", width: 90, overflow: "truncate" },
+        axisLine: { lineStyle: { color: "#303030" } },
       },
       yAxis: {
         type: "value",
-        axisLabel: { color: "#8797ad" },
-        splitLine: { lineStyle: { color: "#202b3c" } },
+        axisLabel: { color: "#9b9b9b" },
+        splitLine: { lineStyle: { color: "#252525" } },
       },
       series: [
         {
           type: widget.type,
           data: data.map((p) => p.value),
           barMaxWidth: 48,
-          itemStyle: { color: "#61e3bd", borderRadius: [5, 5, 0, 0] },
-          lineStyle: { color: "#61e3bd", width: 3 },
+          itemStyle: { color: "#e4e4e4", borderRadius: [5, 5, 0, 0] },
+          lineStyle: { color: "#e4e4e4", width: 3 },
           areaStyle:
             widget.type === "line"
-              ? { color: "#61e3bd", opacity: 0.08 }
+              ? { color: "#e4e4e4", opacity: 0.08 }
               : undefined,
         },
       ],
