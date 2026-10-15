@@ -78,13 +78,29 @@ At 04:37:58–04:37:59 UTC (10:07:58–10:07:59 IST), SDK 0.8.1 on chain 7738577
 
 Command: `npm run test:live -- --public-sample`, using bundled Node 24.19.0 outside sandbox DNS restrictions. No TLS bypass. These are third-party public metadata observations, not project-created records. User confirms wallet is not yet set up.
 
-### Pending writes
+### Verified on-chain writes — 15 October 2026
 
-| Type | Writer | Entity key | Tx hash | Expiry |
-|---|---|---|---|---|
-| demo_metric | PENDING wallet | PENDING | PENDING | PENDING |
-| dashboard | PENDING wallet | PENDING | PENDING | PENDING |
+- **Writer / Creator Address:** `0x9cC4bc554C544856E9DE2D244F05c0d6E8Be099A`
+- **Synthetic metrics batch (12 entities verified at snapshot 596064):**
+  - `0xeaa7287a23de6198732a0004313073f795549cdc176834c725570c9c8a0f5bed`
+  - `0xd1ee0e7427466e8d4e25cccd95cdfccf8fe33cbd6df81409b3ef68ea77f37ef9`
+  - `0xcde9877e4dbb5eb0e3e68ab67f110fe651c803888e398fa5f6749cf651b50d69`
+  - `0xca3664071e6d21b52a2f9db256afa5078e9800ada5c221a042c01d46a1526c0f`
+  - `0xc90b2b7af38aa8822b483dac2f7261baa33179a5a3bd902405ba9b211189e53b`
+  - `0xb1af9f9bc2722878daba498e128c349805ced2ec38cebc7386e264aacbbc0cbe`
+  - `0x9e8d93847fcae6ba265f70c4f8ac5c9ff4a67d6a1ca5ca3d9f701e42ae823cce`
+  - `0x906a575443875a4dc541da1e848e5c19b1ef3367d13743fd40de54787f4484ec`
+  - `0x8a7dbf642bab59e7ed4773599792a3c2af68d14f801e070191f6085d371400aa`
+  - `0x6c2ce4281d1d2a8c229bc13257180e09663793943f9a83c8fc8c189f10f1aed9`
+  - `0x672713a510ad39df277f89f16b6aa200349f9a89b2ca437326acc7e503c523cd`
+  - `0x5cb970766f082ebaef4b3e9b21d8d23301fea230b954056e88eafbc9a761065b`
+- **Published dashboard definition keys:**
+  - `0x249da0c2b8ad2aa5def9d60f963d5c8fbb68084979d7f53054476f87408b3363`
+  - `0x8ca8fd6a7ff57eddcfd5b711579e10d4cacd644a618b00c02844a93710908bec`
 
-Next: user installs and funds an EOA wallet, signs seed, record actual read-back; then publish/read dashboard independently. Do not mark M1/M4 complete before this evidence.
+| Type | Writer | Entity count / Sample key | Expiry |
+|---|---|---|---|
+| demo_metric | `0x9cC4bc554C544856E9DE2D244F05c0d6E8Be099A` | 12 records (`0xeaa7287a...`) | ~30 days |
+| dashboard | `0x9cC4bc554C544856E9DE2D244F05c0d6E8Be099A` | 2 records (`0x249da0c2...`) | ~90 days |
 
 Official sources: https://docs.arkiv.network/typescript-sdk/querying-data/ and installed SDK source under `src/query`, `src/actions/wallet`, `src/types/entity.ts`.

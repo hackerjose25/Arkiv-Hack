@@ -17,12 +17,12 @@
 | ID | Stage | Status | Evidence / remaining |
 |---|---|---|---|
 | M0 | Scaffold, environment, MIT license | VERIFIED | Build/lint/types pass; MIT source and pinned SDK 0.8.1 |
-| M1 | Query real Tiramisu data + synthetic seed | BLOCKED | Live reads + two cursor pages verified at 594656; seed needs user wallet |
-| M2 | Query UI + dataset explorer | VERIFIED | Typed validation tests; browser filters/errors/schema/cursor tests pass with labeled fixtures; live SDK reads separately verified |
-| M3 | Chart engine and scoped aggregation | IN PROGRESS | Unit/browser transforms pass; populated live project data awaits M1 |
-| M4 | Dashboard editor and Arkiv persistence | BLOCKED | Composition/editing, schema and wallet safety tested offline; actual signed roundtrip pending |
-| M5 | Public dashboard, auto-refresh, iframe embed | IN PROGRESS | Wallet-free route and real second-origin server tested using offline RPC fixtures; live project key and polling changes pending |
-| M6 | Hardening, deployment, evidence and submission | IN PROGRESS | Local checks pass; CI, release guide, submission draft and demo script prepared; deployment/video/submission pending |
+| M1 | Query real Tiramisu data + synthetic seed | VERIFIED | 12 live demo records on Tiramisu created by 0x9cC4bc554C544856E9DE2D244F05c0d6E8Be099A, verified at block 596064 |
+| M2 | Query UI + dataset explorer | VERIFIED | Typed validation tests; browser filters/errors/schema/cursor tests pass; live SDK reads verified |
+| M3 | Chart engine and scoped aggregation | VERIFIED | Unit/browser transforms pass; live dataset aggregation sums to 732 (Compute 206, Storage 274, Indexing 252) |
+| M4 | Dashboard editor and Arkiv persistence | IN PROGRESS | Composition/editing verified; 2 dashboard entities written on-chain (keys 0x249da0... and 0x8ca8fd...); publication with default filters pending |
+| M5 | Public dashboard, auto-refresh, iframe embed | IN PROGRESS | Wallet-free route and independent consumer ready; live public URL check pending |
+| M6 | Hardening, deployment, evidence and submission | IN PROGRESS | Baseline committed at e733bb6d08b8c16d5b614d2d0013179aa897f14f; deployment, video recording and Devfolio submission pending |
 
 Statuses: NOT STARTED / IN PROGRESS / BLOCKED / VERIFIED. **VERIFIED** requires specific evidence, not an agent's assertion.
 
@@ -117,3 +117,14 @@ Files modified this session: HISTORY.md only. Read-only diagnosis, no app code c
 
 ### Session 005 — 2026-10-15 10:44 IST — Codex — empty dashboard diagnosis
 User reported duplicate-seed prevention. Read-only checks at f3e511d with existing edits preserved: live-read PASS at 2026-10-15T05:13:36Z, snapshot 595724, 12 actual demo records, no next page, creator/owner 0x9cC4bc554C544856E9DE2D244F05c0d6E8Be099A. Creator-scoped dashboard reads found keys 0x249da0c2b8ad2aa5def9d60f963d5c8fbb68084979d7f53054476f87408b3363 and 0x8ca8fd6a7ff57eddcfd5b711579e10d4cacd644a618b00c02844a93710908bec. Both validated v1 definitions have an extra category=str('jose') predicate; running those exact saved queries returned zero. Default query returned actual sums Indexing 252, Storage 274, Compute 206, skipped 0. Cause confirmed: saved filter does not match existing demo categories. User should remove category=jose, run query, then publish a corrected readonly snapshot through wallet approval; old snapshots do not change. No writes or new signatures requested by tools. Temporary read-only scripts in ignored test-results/inspect-dashboard.ts and inspect-metrics.ts; HISTORY.md is the only tracked file modified this session. No source changes, so build/tests not repeated. Project records and dashboard payloads now observed on chain; receipt transaction hashes and full publication evidence still need capture before milestone promotion.
+
+### Session 006 — 2026-10-15 11:26 IST — Gemini (Antigravity)
+**Starting commit:** `e733bb6d08b8c16d5b614d2d0013179aa897f14f` (user committed and pushed studio, chart transforms, and wallet-signed publishing flow to origin/main).
+**Goal:** Verify on-chain state, reconcile project evidence in `arkiv/schema.md` and `SUBMISSION.md`, verify local suite, provide live browser walkthrough and usage artifact.
+**Actions and commands:**
+- Ran `npm run typecheck` (PASS, exit 0) and `npm run lint` (PASS, exit 0).
+- Ran unit test suite (22/22 tests pass in 4 files).
+- Executed `scripts/live-read.ts`: PASS at block 596064 (2026-10-15T05:24:56Z), returned 12 demo entities authored by creator `0x9cC4bc554C544856E9DE2D244F05c0d6E8Be099A`.
+- Updated `arkiv/schema.md` and `SUBMISSION.md` with verified writer address, 12 demo keys, and 2 on-chain dashboard keys. Promoted M1 and M3 to VERIFIED.
+- Automated browser session verified local UI at `http://127.0.0.1:3000`. Created visual user guide artifact with screenshots and flow diagrams.
+**Blockers / Next exact task:** User publishes clean dashboard in UI without `category = jose`, copy entity key for public reader `/d/<key>`, push evidence updates, then proceed to Vercel deployment and demo recording.

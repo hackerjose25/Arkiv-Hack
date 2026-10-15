@@ -42,11 +42,11 @@ Fresh public metadata reads succeeded 15 October 2026, 04:37:59 UTC, at block 59
 
 | Item | Value |
 |---|---|
-| Writer address and role | PENDING user wallet |
-| Synthetic seed transaction / 12 entity keys | PENDING |
-| Dashboard transaction / entity key | PENDING |
-| Independent live reader/embed URL | PENDING |
-| Time to first successful project write | Not measured; no project write yet |
+| Writer address and role | `0x9cC4bc554C544856E9DE2D244F05c0d6E8Be099A` (Project creator/publisher) |
+| Synthetic seed / 12 entity keys | 12 records verified at block 596064 (e.g. `0xeaa7287a23de6198732a0004313073f795549cdc176834c725570c9c8a0f5bed`) |
+| Dashboard entity keys | `0x249da0c2b8ad2aa5def9d60f963d5c8fbb68084979d7f53054476f87408b3363`, `0x8ca8fd6a7ff57eddcfd5b711579e10d4cacd644a618b00c02844a93710908bec` |
+| Independent live reader/embed URL | PENDING public deployment |
+| Time to first successful project write | ~15 minutes after wallet connection & faucet funding |
 | Team members / eligibility | User to supply |
 | Feedback-call consent | User to decide |
 
