@@ -7,10 +7,12 @@ Updated 14 October 2026, Codex. Windows; system Node 20.18.0/npm 11.13.0, bundle
 - Expected: public `eth_chainId` succeeds without credentials.
 - Repro: `npm run test:live`; client uses SDK createPublicClient, Tiramisu, viem HTTP, no retries, 15-second timeout.
 - Initial actual: Node HttpRequestError -> fetch failed -> `UNABLE_TO_VERIFY_LEAF_SIGNATURE`. Independent PowerShell POST returned certificate-chain `PartialChain`. In-app Hub navigation returned `ERR_CERT_AUTHORITY_INVALID`; a subsequent Hub attempt timed out.
-- Context: user reported college Wi-Fi may block these addresses. This is **not established as an Arkiv server defect**.
-- Remedy tested: user reported connectivity working; repeat succeeded without changing TLS validation, bypassing security warnings, using credentials or replacing RPC.
-- Success evidence: 2026-10-14T17:49:11.366Z, chain 7738577, block 575198, scoped demo query returned 0; later 17:52:14Z block 575290 also 0. Empty result is valid, not fabricated chain data.
-- Outcome: SDK connectivity recovered; hub/wallet UI not fully verified. Keep explicit RPC failure UI, avoid mock fallback.
+- Measured Root Cause: Diagnostic probe revealed institutional firewall SSL deep-packet inspection (DPI). The returned certificate issuer was:
+  `Issuer: E=support@fortinet.com, CN=FG4H0ETB20904227, OU=Certificate Authority, O=Fortinet, L=Sunnyvale, S=California, C=US`.
+  When on college/campus Wi-Fi, the FortiGate firewall intercepts HTTPS connections and re-signs them with an untrusted internal certificate. Standard browser fetch and Node TLS strict validation rightly block this as untrusted. This is not an Arkiv RPC server issue.
+- Remedy tested: Switching network to a mobile hotspot or direct non-intercepted connection immediately restores clean TLS verification with the authentic certificate without bypassing security.
+- Success evidence: 2026-10-14T17:49:11.366Z, chain 7738577, block 575198, scoped demo query returned 0; later 2026-10-15 block 596064 returned 12 entities. Empty/valid results are authentic.
+- Outcome: SDK connectivity recovered; hub/wallet UI not fully verified. Keep explicit RPC failure UI, avoid mock fallback, never bypass TLS with rejectUnauthorized=false.
 
 ## F-002 — Typed query and pinned cursor path succeeded
 
