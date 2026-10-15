@@ -67,6 +67,19 @@ These are third-party public metadata observations, **not project-written artifa
 
 ## Project write ledger
 
+### Read re-verification — 15 October 2026
+
+At 04:37:58–04:37:59 UTC (10:07:58–10:07:59 IST), SDK 0.8.1 on chain 7738577 returned zero demo records at block 594656. A bounded metadata-only sample at the same snapshot returned:
+
+- First key: `0x95bc88ffdc04c7767c1b5ecb8ae55d880dc602386d56835aeb8577aac41ce3f5`
+- Creator and owner: `0x6CB41094b6AE370454C2c34Cf91Cf02e768A5E22`
+- Expiry block: 595556
+- Second key: `0x47525ca46c6f07377a798ca5550d979cd10e3f9ef6c606dd0227ec7cfd7c65fd`
+
+Command: `npm run test:live -- --public-sample`, using bundled Node 24.19.0 outside sandbox DNS restrictions. No TLS bypass. These are third-party public metadata observations, not project-created records. User confirms wallet is not yet set up.
+
+### Pending writes
+
 | Type | Writer | Entity key | Tx hash | Expiry |
 |---|---|---|---|---|
 | demo_metric | PENDING wallet | PENDING | PENDING | PENDING |

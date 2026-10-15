@@ -148,7 +148,7 @@ async function writeEntitiesLocked(
   };
   localStorage.setItem(storageKey, JSON.stringify(intent));
   type RpcRequest = { method: string; params?: unknown };
-  const request = provider.request as unknown as (
+  const request = provider.request.bind(provider) as unknown as (
     args: RpcRequest,
   ) => Promise<unknown>;
   const guarded = {
@@ -165,7 +165,22 @@ async function writeEntitiesLocked(
           storageKey,
           JSON.stringify({ ...intent, phase: "submitting" }),
         );
-        const hash = await request(args);
+        let hash: unknown;
+        try {
+          hash = await request(args);
+        } catch (error) {
+          // EIP-1193 user rejection establishes that this request was not sent.
+          // Timeouts and all other errors remain uncertain and keep the journal.
+          if (
+            typeof error === "object" &&
+            error !== null &&
+            "code" in error &&
+            error.code === 4001
+          ) {
+            localStorage.removeItem(storageKey);
+          }
+          throw error;
+        }
         localStorage.setItem(
           storageKey,
           JSON.stringify({ ...intent, phase: "submitted", txHash: hash }),

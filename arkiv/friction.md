@@ -47,6 +47,12 @@ Updated 14 October 2026, Codex. Windows; system Node 20.18.0/npm 11.13.0, bundle
 
 ## Not yet tested
 
+### 15 October 2026 re-verification
+
+Sandbox execution of the public read script failed at `eth_chainId` with `ENOTFOUND`. The same script outside sandbox network restrictions succeeded at 04:37:58 UTC, chain 7738577, block 594656; the namespace was empty, and two metadata-only cursor pages returned distinct keys. See schema.md for the observed keys. This is a local execution restriction, not evidence of an Arkiv outage. TLS validation remained enabled.
+
+The sandbox temporary-file rename restriction also reproduced in Vitest; the same suite outside it passed. Wallet safety tests use mocked providers and never broadcast transactions. Live seed and dashboard writes remain pending because the user has no wallet installed.
+
 Wallet transaction, funded-gas workflow, synthetic seed read-back, dashboard save/read-back, live independent public/embed load, expiry extension, WebSockets, deployment/faucet sign-in and submission. User confirmed **no wallet installed**. No transactions were broadcast. Required next action: user installs an EOA wallet, obtains test GLM, and signs the reviewed seed through the app; capture the real receipt and keys before marking write milestones complete.
 
 Sources: [official query guide](https://docs.arkiv.network/typescript-sdk/querying-data/), [skills](https://github.com/Arkiv-Network/skills), [AI tools](https://hub.arkiv.network/ai-tools). Do not submit this report as feedback without the user's separate authorization.

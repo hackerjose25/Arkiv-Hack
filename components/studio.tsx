@@ -37,6 +37,7 @@ import {
   dashboardSchema,
   defaultWidget,
   embedSnippet,
+  widgetSchema,
   type Widget,
 } from "@/lib/dashboard";
 import { connectWallet, publishDashboard } from "@/lib/wallet";
@@ -57,6 +58,7 @@ export default function Studio() {
   const [view, setView] = useState<"table" | "chart">("table");
   const [widget, setWidget] = useState<Widget>(defaultWidget);
   const [widgets, setWidgets] = useState<Widget[]>([]);
+  const [editingId, setEditingId] = useState<string>();
   const [title, setTitle] = useState("Untitled dashboard");
   const [description, setDescription] = useState("");
   const [refresh, setRefresh] = useState(60);
@@ -73,6 +75,20 @@ export default function Studio() {
   const [recovery, setRecovery] = useState("");
   const active = useRef<AbortController | null>(null);
   const detailRequest = useRef<AbortController | null>(null);
+  const detailDialog = useRef<HTMLDialogElement | null>(null);
+  const detailTrigger = useRef<HTMLElement | null>(null);
+  const detailOpen = !!detail;
+  useEffect(() => {
+    if (!detailOpen) return;
+    const previous = detailTrigger.current;
+    const dialog = detailDialog.current;
+    dialog?.showModal();
+    dialog?.querySelector<HTMLButtonElement>("button")?.focus();
+    return () => {
+      dialog?.close();
+      previous?.focus();
+    };
+  }, [detailOpen]);
   useEffect(() => {
     const provider = window.ethereum;
     const reset = () => setAccount("");
@@ -173,6 +189,7 @@ export default function Studio() {
     });
   }
   async function inspect(row: Row) {
+    detailTrigger.current = document.activeElement as HTMLElement | null;
     detailRequest.current?.abort();
     const controller = new AbortController();
     detailRequest.current = controller;
@@ -216,6 +233,14 @@ export default function Studio() {
     }
   }
   function addWidget() {
+    if (editingId) {
+      setWidgets(
+        widgets.map((w) => (w.id === editingId ? { ...widget, id: w.id } : w)),
+      );
+      setEditingId(undefined);
+      setSection("dashboard");
+      return;
+    }
     if (widgets.length >= 8) return;
     setWidgets([
       ...widgets,
@@ -773,11 +798,27 @@ export default function Studio() {
                       </label>
                       <button
                         onClick={addWidget}
-                        disabled={!page || changed || widgets.length >= 8}
+                        disabled={
+                          !page ||
+                          changed ||
+                          !widgetSchema.safeParse(widget).success ||
+                          (!editingId && widgets.length >= 8)
+                        }
                       >
                         <Plus size={14} />
-                        Add to dashboard
+                        {editingId ? "Save widget changes" : "Add to dashboard"}
                       </button>
+                      {editingId && (
+                        <button
+                          onClick={() => {
+                            setEditingId(undefined);
+                            setWidget(defaultWidget);
+                            setSection("dashboard");
+                          }}
+                        >
+                          Cancel widget editing
+                        </button>
+                      )}
                     </div>
                     <Chart rows={rows} widget={widget} />
                   </div>
@@ -874,6 +915,17 @@ export default function Studio() {
                       <h2>{w.title}</h2>
                       <div>
                         <button
+                          aria-label={`Edit ${w.title}`}
+                          onClick={() => {
+                            setWidget(w);
+                            setEditingId(w.id);
+                            setView("chart");
+                            setSection("query");
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button
                           aria-label={`Move ${w.title} up`}
                           disabled={!i}
                           onClick={() => {
@@ -963,8 +1015,22 @@ export default function Studio() {
         </main>
       </div>
       {detail && (
-        <div
+        <dialog
+          ref={detailDialog}
           className="modal-backdrop"
+          aria-label="Entity details"
+          onKeyDown={(event) => {
+            if (event.key === "Tab") {
+              event.preventDefault();
+              detailDialog.current
+                ?.querySelector<HTMLButtonElement>("button")
+                ?.focus();
+            }
+          }}
+          onCancel={() => {
+            detailRequest.current?.abort();
+            setDetail(undefined);
+          }}
           onClick={() => {
             detailRequest.current?.abort();
             setDetail(undefined);
@@ -972,9 +1038,6 @@ export default function Studio() {
         >
           <section
             className="detail panel"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Entity details"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="panel-head">
@@ -1017,7 +1080,7 @@ export default function Studio() {
               <pre>{detailError || detail.text || "Loading payload…"}</pre>
             </div>
           </section>
-        </div>
+        </dialog>
       )}
     </div>
   );

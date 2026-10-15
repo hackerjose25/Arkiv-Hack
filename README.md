@@ -81,6 +81,8 @@ Official Arkiv skills were read at `Arkiv-Network/skills` commit `b18c19a80c95a8
 
 ## Remaining roadmap
 
-Install/fund the user's wallet; verify seed and dashboard writes; independently verify live share/embed; add widget editing/resizing and multiple queries if needed; finish keyboard dialog handling and hostile-input tests; deploy with the user's approval; record public MIT repo/demo links, <=3-minute video and submission evidence. Do not claim a deployed, complete or prize-ready application yet.
+Install/fund the user's wallet; verify seed and dashboard writes; independently verify live share/embed; deploy with the user's approval; record public MIT repo/demo links, <=3-minute video and submission evidence. Widget editing, keyboard dialog handling and hostile-input regressions are implemented; verified check results are recorded in HISTORY. Resizing and multiple queries remain optional extensions to the documented v1 contract. Do not claim a deployed, complete or prize-ready application yet.
+
+Use [the release checklist](RELEASE.md) for wallet setup, exact expected synthetic values and deployment preparation. [The submission draft](SUBMISSION.md) explicitly marks missing public evidence; [the timed demo script](DEMO.md) is ready for recording after live verification. GitHub Actions runs lint, types, unit tests, production build and offline browser checks when the workflow is pushed.
 
 Sources: [Arkiv docs](https://docs.arkiv.network/), [AI tools](https://hub.arkiv.network/ai-tools), [schema](arkiv/schema.md), [measured friction](arkiv/friction.md), [official event](https://github.com/Arkiv-Network/global-tour-stop-pre-devcon).

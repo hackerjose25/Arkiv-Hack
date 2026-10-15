@@ -40,7 +40,15 @@ export default function Chart({
     const data = aggregate(rows, widget).points;
     instance.setOption({
       animation: false,
-      aria: { enabled: true },
+      aria: {
+        enabled: true,
+        label: {
+          description: `${widget.title}. ${data
+            .map((p) => `${p.name}: ${p.value}`)
+            .join(", ")
+            .slice(0, 2000)}`,
+        },
+      },
       tooltip: { trigger: "axis", renderMode: "richText" },
       grid: { left: 58, right: 24, top: 20, bottom: 55 },
       xAxis: {

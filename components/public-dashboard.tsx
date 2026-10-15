@@ -21,7 +21,14 @@ export default function PublicDashboard({
   const [error, setError] = useState("");
   const [last, setLast] = useState("");
   const [creator, setCreator] = useState("");
+  const [owner, setOwner] = useState("");
   useEffect(() => {
+    setSpec(undefined);
+    setRows([]);
+    setLast("");
+    setCreator("");
+    setOwner("");
+    setError("");
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout>;
     let failures = 0;
@@ -52,6 +59,7 @@ export default function PublicDashboard({
         setSpec(parsed);
         setRows(page.entities);
         setCreator(entity.creator);
+        setOwner(entity.owner);
         setLast(new Date().toLocaleTimeString());
         setError("");
         failures = 0;
@@ -123,6 +131,7 @@ export default function PublicDashboard({
         Direct Arkiv reads · {rows.length} rows on current page
         {last ? ` · Updated ${last}` : ""}
         {creator && <p className="mono">Creator: {creator}</p>}
+        {owner && <p className="mono">Owner: {owner}</p>}
         <p>
           Polling pauses while hidden. Expired or deleted definitions may become
           unavailable.
