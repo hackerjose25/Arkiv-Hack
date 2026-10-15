@@ -34,21 +34,22 @@ export const filterSchema = z
   .strict();
 export const querySchema = z
   .object({
-    filters: z.array(filterSchema).min(1).max(12),
+    filters: z.array(filterSchema).max(12),
     limit: z.number().int().min(1).max(100),
   })
   .strict();
 export type QuerySpec = z.infer<typeof querySchema>;
 export type Filter = z.infer<typeof filterSchema>;
-export const demoQuery: QuerySpec = {
-  filters: [
-    { field: "app", type: "str", op: "eq", value: "arkivsight" },
-    { field: "kind", type: "str", op: "eq", value: "demo_metric" },
-  ],
-  limit: 25,
+export const publicQuery: QuerySpec = {
+  filters: [],
+  limit: 50,
 };
 export function predicates(input: QuerySpec) {
-  return querySchema.parse(input).filters.map((f) => {
+  const parsed = querySchema.parse(input);
+  // SDK 0.8.1 requires a predicate. Expiry is an unsigned system block height,
+  // so >= 0 selects every currently queryable entity without a user restriction.
+  if (!parsed.filters.length) return [gte("$expiresAt", u64(0n))];
+  return parsed.filters.map((f) => {
     const expected: Record<string, string> = {
       $creator: "addr",
       $owner: "addr",

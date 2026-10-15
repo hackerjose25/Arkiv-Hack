@@ -1,14 +1,14 @@
-# ArkivSight schema — runtime v1, writes pending
+# ArkivSight schema — runtime v1, public data browser
 
-Updated 14 October 2026, Codex. SDK 0.8.1 / viem 2.57.7. This file describes implemented serializers and verified read operations. **No ArkivSight entities have yet been written.** The transaction ledger remains empty until wallet-approved live verification.
+Updated 15 October 2026, Codex. SDK 0.8.1 / viem 2.57.7. The app reads existing public records and writes only dashboard definitions through user-approved wallets. Dataset generation/publication has been removed. Previously published entities remain historical chain evidence below.
 
 ## Indexed attributes versus payload
 
 Application attribute names are lowercase `[a-z][a-z0-9_]*`, at most 32 characters. Strings use SDK `str` (implicit bare strings on writes); integers use `i32`. Payload JSON is not queryable. `$creator`, `$owner`, `$key` and `$expiresAt` are authoritative system metadata with types addr, addr, key and u64. Returned creator/owner are taken from entity metadata, never identically named custom attributes. Created/expiry fields are block heights, not timestamps.
 
-## Synthetic metric
+## Retired synthetic metric schema — historical evidence only
 
-`lib/wallet.ts: syntheticParameters()` prepares 12 records; all values are fictional.
+The removed `syntheticParameters()` previously prepared 12 fictional metrics. No application UI, generator or seed write path remains. Existing public entities have not been deleted and can still match broad public queries; an unfiltered reader cannot certify whether an arbitrary publisher's content is factual or synthetic.
 
 | Attribute | Type | Value |
 |---|---|---|
@@ -44,13 +44,17 @@ Widget types: table, bar, line, kpi. Aggregation: count/sum/average. Array order
 
 ## Actual queries
 
-`QuerySpec = { filters: {field,type,op,value:string}[], limit:number }`. 1–12 AND conditions, limit 1–100. Types: str/i32/u64/u256/dec/bool/addr/key. Constructors validate exact numeric ranges; bigint typed values are parsed without Number conversion. Prefix is string-only; range is numeric-only.
+`QuerySpec = { filters: {field,type,op,value:string}[], limit:number }`. 0–12 AND conditions, limit 1–100. Types: str/i32/u64/u256/dec/bool/addr/key. Constructors validate exact numeric ranges; bigint typed values are parsed without Number conversion. Prefix is string-only; range is numeric-only.
 
-Default rendered query: `app = str('arkivsight') AND kind = str('demo_metric')`.
+Default query: `{filters: [], limit: 50}`. SDK 0.8.1 refuses a builder without predicates; zero user filters compile to `$expiresAt >= u64(0)`. Every currently queryable entity has a nonnegative unsigned expiry block, so this places no app/dataset/creator restriction. Public Database automatically runs this bounded query and uses its pinned cursors. Query studio allows deleting the last filter and clearing all filters. Existing filtered dashboard definitions still parse; new zero-filter definitions require this updated reader. The version-1 JSON structure is unchanged.
 
 `runQuery()` reads a fresh head, then selects key, attributes, creator, owner, createdAt and expiresAt using `.atBlock(block).limit(limit).fetch()`. No payload in the table projection. Next page uses immutable `page.next()`; prior pages remain readable. Changing filters invalidates navigation until rerun. Cursor failures ask for a fresh query. Sorting is client-side **current page only**; SDK 0.8.1 has no server ORDER BY. Counts and chart totals are always current-page counts, never a global chain count.
 
 Public dashboard: `getEntity(key)` (SDK performs `$key = key(...)`, full projection, limit 1), verify app/kind/schema_version/contentType, size-bound and Zod-validate payload, run its query. Payload inspection is capped at 64 KiB after SDK retrieval; this does not cap the provider's HTTP body before parsing.
+
+Runtime polling policy (15 October): studio first-page queries, public dashboards and embeds refresh 30 seconds after each completed successful read. Hidden tabs pause, failures back off; studio polling also pauses on edited filters and later cursor pages. New dashboard definitions write refreshSeconds=30. Existing readonly definitions retain their stored fields; the current reader uses 30 seconds, including for older 60-second definitions. No on-chain schema version or entity was rewritten.
+
+MCP observations are supplemental and are not persisted as Arkiv entities. `/api/mcp/entity?key=<public-key>` sends only that key and publicEvidenceReviewed=true to the fixed Devfolio `verify_entity` tool. Validated response fields include status, created/updated/expiry block, creation flags, warnings and observation (Tiramisu chain 7738577, query-page block, time and server version). No dataset rows, attributes, payload or canonical creator/owner are provided by that tool. Those still come from direct SDK queries.
 
 ## Live read evidence
 

@@ -1,18 +1,18 @@
 import { publicClient, runQuery } from "../lib/arkiv";
-import { demoQuery } from "../lib/query";
+import { publicQuery } from "../lib/query";
 import { u64 } from "@arkiv-network/sdk/attr";
 import { gte } from "@arkiv-network/sdk/query";
 const client = publicClient();
 const chainId = await client.getChainId();
 if (chainId !== 7738577) throw new Error("Wrong network");
-const page = await runQuery(demoQuery);
+const page = await runQuery(publicQuery);
 console.log(
   JSON.stringify(
     {
       observedAt: new Date().toISOString(),
       sdk: "0.8.1",
       chainId,
-      query: demoQuery,
+      query: publicQuery,
       block: page.blockNumber.toString(),
       count: page.entities.length,
       hasNext: page.hasNextPage(),

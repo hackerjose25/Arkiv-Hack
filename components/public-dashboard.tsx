@@ -7,6 +7,7 @@ import {
   type Dashboard,
 } from "@/lib/dashboard";
 import Chart from "./chart";
+import McpObservationPanel from "./mcp-observation";
 export default function PublicDashboard({
   entityKey,
   embed = false,
@@ -63,7 +64,7 @@ export default function PublicDashboard({
         setLast(new Date().toLocaleTimeString());
         setError("");
         failures = 0;
-        timer = setTimeout(refresh, parsed.refreshSeconds * 1000);
+        timer = setTimeout(refresh, 30000);
       } catch (e) {
         if (closed) return;
         setError(e instanceof Error ? e.message : "Unable to load dashboard");
@@ -129,6 +130,7 @@ export default function PublicDashboard({
       </div>
       <footer>
         Direct Arkiv reads · {rows.length} rows on current page
+        {" · Refresh every 30 seconds"}
         {last ? ` · Updated ${last}` : ""}
         {creator && <p className="mono">Creator: {creator}</p>}
         {owner && <p className="mono">Owner: {owner}</p>}
@@ -137,6 +139,7 @@ export default function PublicDashboard({
           unavailable.
         </p>
       </footer>
+      {spec && <McpObservationPanel entityKey={entityKey} />}
     </main>
   );
 }

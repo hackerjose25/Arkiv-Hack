@@ -5,13 +5,13 @@ import {
   defaultWidget,
   embedSnippet,
 } from "../lib/dashboard";
-import { demoQuery } from "../lib/query";
+import { publicQuery } from "../lib/query";
 const spec = {
   version: 1,
   network: "tiramisu",
   title: "Test dashboard",
   description: "Offline fixture",
-  query: demoQuery,
+  query: publicQuery,
   widgets: [defaultWidget],
   refreshSeconds: 60,
   createdAt: "2026-10-14T12:00:00.000Z",
@@ -19,6 +19,16 @@ const spec = {
 describe("dashboard contract (offline)", () => {
   it("round trips validated UTF-8 payloads", () =>
     expect(decodeDashboard(encodeDashboard(spec))).toEqual(spec));
+  it("continues to load previously published definitions with nonempty filters", () => {
+    const filtered = {
+      ...spec,
+      query: {
+        filters: [{ field: "app", type: "str", op: "eq", value: "publisher" }],
+        limit: 25,
+      },
+    };
+    expect(decodeDashboard(encodeDashboard(filtered))).toEqual(filtered);
+  });
   it("rejects executable/unknown fields", () =>
     expect(() =>
       encodeDashboard({ ...spec, html: "<script>alert(1)</script>" }),

@@ -1,0 +1,21 @@
+{
+  "observedAt": "2026-10-15T10:01:19.819Z",
+  "network": "tiramisu",
+  "chainId": 7738577,
+  "sdkVersion": "0.8.1",
+  "userFilters": [],
+  "renderedQuery": "$expiresAt >= u64(0)",
+  "snapshotBlock": "604353",
+  "pageSize": 25,
+  "firstPage": {
+    "count": 25,
+    "hasNextPage": true,
+    "firstKey": "0x03840b9201a03d29d42f5dcf59c8b33dc81f7c1fb6858d51ad5b98fbff91e549"
+  },
+  "secondPage": {
+    "snapshotBlock": "604353",
+    "count": 25,
+    "firstKey": "0xf7bb61708efa4f0f619d4716e17ceeacafb2a93d6b7fbf981ea92d697d93f64b"
+  },
+  "scope": "Two bounded live public pages; not a global count. Payloads were not fetched. No mock RPC or signing."
+}

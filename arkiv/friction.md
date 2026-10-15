@@ -38,6 +38,23 @@ Updated 14 October 2026, Codex. Windows; system Node 20.18.0/npm 11.13.0, bundle
 - npm registry successfully supplied SDK 0.8.1. SDK/source verification and direct network tests are the integration authority.
 - Suggested improvement: keep Hub availability text aligned with released profile documentation.
 
+## F-005 — Direct MCP connection works; live entity scope is metadata only
+
+- Expected: use the official MCP endpoint for real on-chain observations, determine whether it can supply dashboard rows, and keep npm packages/plugin unchanged.
+- Repro: Node 24 `scripts/mcp-evidence.mjs` initializes `https://mcp.arkiv.network/devfolio`, sends notifications/initialized, paginates tools/list, then calls server_status/network_status/verify_entity using their discovered schemas.
+- Actual: negotiated 2025-06-18; server arkiv-devfolio 1.1.24, config 2026-10-14.1, content 27b032f009c234b8. Network status confirmed fresh live chain ID 7738577. At 2026-10-15T09:36:58.336Z, verify_entity observed project metric `0xeaa7287a23de6198732a0004313073f795549cdc176834c725570c9c8a0f5bed` at query-page block 603626, created block 595453, expiry 1891453, readonly true and permissionlessExtension false. No warnings/error.
+- Capability limit: actual tools expose a bounded key-based metadata observation, not arbitrary indexed queries or attribute/payload reads. The service explicitly excludes creator/owner too. This is a capability boundary, not a fabricated failure.
+- Remedy: keep direct Tiramisu chart queries; add a clearly separate MCP metadata panel using a fixed read-only route. Both refresh at 30 seconds, pause while hidden, cancel on unmount and back off on error. MCP failure never substitutes data or prevents direct reads. Requests are bounded and duplicate checks briefly cached.
+- No package/plugin installation, host configuration changes, feedback submission, wallet access or chain writes performed. `publicEvidenceReviewed` refers to an already published project synthetic entity key.
+
+## F-006 — Zero user filters require a match-all equivalent in SDK 0.8.1
+
+- Expected: remove every user condition and browse public entities across publishers, in bounded pages.
+- Source inspected: installed `src/query/queryBuilder.ts` `toString()` throws InvalidPredicateError when its predicate list is empty; its message says the query language has no match-every-entity spelling. Passing an empty array to `where()` does not bypass this.
+- Remedy: application QuerySpec accepts 0–12 conditions. Zero user conditions compile to `$expiresAt >= u64(0)`, a comparison on nonnegative unsigned canonical expiry that covers all currently queryable entities. No app, creator or dataset constraint is added. Both UI and schema distinguish user filters from this SDK implementation detail.
+- Actual live verification: 2026-10-15T10:01:19.819Z, block 604353, public first page 25 records, hasNext true; second page 25 records at the same snapshot with a distinct key. First key `0x03840b9201a03d29d42f5dcf59c8b33dc81f7c1fb6858d51ad5b98fbff91e549`; next page first key `0xf7bb61708efa4f0f619d4716e17ceeacafb2a93d6b7fbf981ea92d697d93f64b`. Payloads were not fetched. No global count or full-database download is claimed.
+- Product change: synthetic seeder UI/generator/write path removed by user request. Public Database is now the landing view; any pre-existing synthetic chain entities remain public records. Arbitrary public testnet content cannot be certified as factual by the reader.
+
 ## Local tooling findings (not Arkiv defects)
 
 - Sandboxed npm DNS requests failed; permitted network execution succeeded.

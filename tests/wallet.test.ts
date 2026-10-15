@@ -1,6 +1,6 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import { defaultWidget } from "../lib/dashboard";
-import { demoQuery } from "../lib/query";
+import { publicQuery } from "../lib/query";
 
 const mocks = vi.hoisted(() => ({
   request: vi.fn(),
@@ -43,7 +43,7 @@ const spec = {
   network: "tiramisu" as const,
   title: "Offline wallet test",
   description: "No real transactions",
-  query: demoQuery,
+  query: publicQuery,
   widgets: [defaultWidget],
   refreshSeconds: 60,
   createdAt: "2026-10-15T00:00:00.000Z",

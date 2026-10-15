@@ -32,25 +32,26 @@ Arkiv provides a shared public data layer for indexed source entities and wallet
 
 - SDK 0.8.1 public client; typed AND predicates and numeric/string operators: `lib/query.ts`.
 - Snapshot-pinned cursor reads and canonical metadata: `lib/arkiv.ts`.
+- Direct MCP Streamable HTTP session and live public entity metadata observations: `lib/mcp.ts`, `scripts/mcp-evidence.mjs`. Official Devfolio server 1.1.24 observed a real project metric at block 603626. MCP supplies metadata only; chart queries remain direct SDK reads. No Codex plugin installed and no new npm package added for this integration.
 - Versioned strict dashboard payload, safe embed generation: `lib/dashboard.ts`.
-- Browser wallet batch seed/publication, expiry, readonly flags, journal and read-back: `lib/wallet.ts`. Live wallet execution remains PENDING.
+- Browser wallet dashboard-definition publication, expiry, readonly flags, journal and read-back: `lib/wallet.ts`. Synthetic data publication was removed; receipt capture remains pending.
 - Wallet-free public readers and polling with visibility pause/backoff: `components/public-dashboard.tsx`. Offline tests pass only when recorded in HISTORY; live project entity verification remains PENDING.
 
-Fresh public metadata reads succeeded 15 October 2026, 04:37:59 UTC, at block 594656. The demo namespace was empty. This demonstrates actual reads, not project writes or a complete demo. Full details are in `arkiv/schema.md` and `arkiv/friction.md`.
+Unfiltered public reads succeeded 15 October 2026, 10:01:19 UTC, at block 604353: two bounded pages of 25 records retained the same snapshot and had distinct keys. The app now starts in Public Database and generates no source data. Historical project writes are listed below; full evidence and current limits are in `arkiv/schema.md` and `arkiv/friction.md`.
 
 ## Required evidence to fill after execution
 
 | Item | Value |
 |---|---|
 | Writer address and role | `0x9cC4bc554C544856E9DE2D244F05c0d6E8Be099A` (Project creator/publisher) |
-| Synthetic seed / 12 entity keys | 12 records verified at block 596064 (e.g. `0xeaa7287a23de6198732a0004313073f795549cdc176834c725570c9c8a0f5bed`) |
+| Historical synthetic write evidence (publisher removed) | 12 records verified at block 596064 (e.g. `0xeaa7287a23de6198732a0004313073f795549cdc176834c725570c9c8a0f5bed`); no longer the app's default source |
 | Dashboard entity keys | `0x249da0c2b8ad2aa5def9d60f963d5c8fbb68084979d7f53054476f87408b3363`, `0x8ca8fd6a7ff57eddcfd5b711579e10d4cacd644a618b00c02844a93710908bec` |
 | Independent live reader/embed URL | PENDING public deployment |
 | Time to first successful project write | ~15 minutes after wallet connection & faucet funding |
 | Team members / eligibility | User to supply |
 | Feedback-call consent | User to decide |
 
-Reproduction: follow `RELEASE.md`, including creator-scoped filters, actual seed read-back and a clean-browser dashboard load. Schema: `arkiv/schema.md`. Measured friction: `arkiv/friction.md`.
+Reproduction: follow `RELEASE.md`: open Public Database, browse pinned pages of live entities, open an unfiltered query or select indexed fields, build widgets and publish only the dashboard definition, then load it in a clean browser. Historical demo keys remain evidence of earlier writes; they are no longer the default dataset or an app publishing workflow. Schema: `arkiv/schema.md`. Measured friction: `arkiv/friction.md`.
 
 ## Challenges and suggested improvement
 

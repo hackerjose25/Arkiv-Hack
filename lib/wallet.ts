@@ -6,7 +6,6 @@ import {
 } from "@arkiv-network/sdk";
 import { tiramisu } from "@arkiv-network/sdk/chains";
 import { i32 } from "@arkiv-network/sdk/attr";
-import { eq } from "@arkiv-network/sdk/query";
 import { custom, isAddress, type EIP1193Provider } from "viem";
 import { publicClient } from "./arkiv";
 import { encodeDashboard, type Dashboard } from "./dashboard";
@@ -81,9 +80,6 @@ export async function publishDashboard(spec: Dashboard) {
   );
   return result;
 }
-export async function seedDemo() {
-  return writeEntities(syntheticParameters(), "synthetic demo");
-}
 async function writeEntities(
   parameters: CreateEntityParameters[],
   kind: string,
@@ -118,22 +114,6 @@ async function writeEntitiesLocked(
   const reader = publicClient();
   if ((await reader.getChainId()) !== tiramisu.id)
     throw new Error("RPC network mismatch");
-  if (kind === "synthetic demo") {
-    const priorSeed = await reader
-      .select({ key: true })
-      .where(
-        eq("app", "arkivsight"),
-        eq("kind", "demo_metric"),
-        eq("dataset", "sample_metrics_v1"),
-      )
-      .createdBy(account)
-      .limit(1)
-      .fetch();
-    if (priorSeed.entities.length)
-      throw new Error(
-        "This wallet already has demo records. Run the query; do not seed duplicates.",
-      );
-  }
   if ((await reader.getBalance({ address: account })) === 0n)
     throw new Error("This wallet needs test GLM from the Arkiv Hub faucet.");
   const intent = {
@@ -246,28 +226,4 @@ async function writeEntitiesLocked(
     if (journal.phase === "prepared") localStorage.removeItem(storageKey);
     throw error;
   }
-}
-export function syntheticParameters(): CreateEntityParameters[] {
-  return Array.from({ length: 12 }, (_, i) => ({
-    attributes: {
-      app: "arkivsight",
-      kind: "demo_metric",
-      dataset: "sample_metrics_v1",
-      category: ["Compute", "Storage", "Indexing"][i % 3],
-      region: ["Chennai", "Mumbai"][i % 2],
-      period: i32(20261001 + Math.floor(i / 3)),
-      value: i32(20 + ((i * 17) % 90)),
-      sequence: i32(i),
-    },
-    payload: new TextEncoder().encode(
-      JSON.stringify({
-        label: "Synthetic metric",
-        description: "Fabricated demonstration values; no personal data",
-        unit: "requests",
-      }),
-    ),
-    contentType: "application/json",
-    expires: ExpirationTime.fromDays(30),
-    flags: { readonly: true, permissionlessExtension: false },
-  }));
 }

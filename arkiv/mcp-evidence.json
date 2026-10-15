@@ -1,0 +1,99 @@
+{
+  "endpoint": "https://mcp.arkiv.network/devfolio",
+  "protocolVersion": "2025-06-18",
+  "serverVersion": "1.1.24",
+  "configRevision": "2026-10-14.1",
+  "contentRevision": "27b032f009c234b8",
+  "tool": "verify_entity",
+  "entityKey": "0xeaa7287a23de6198732a0004313073f795549cdc176834c725570c9c8a0f5bed",
+  "publicEvidenceReviewed": true,
+  "result": {
+    "status": "observed",
+    "data": {
+      "kind": "entity_metadata",
+      "createdAt": "595453",
+      "updatedAt": "595453",
+      "expiresAt": "1891453",
+      "creationFlags": {
+        "raw": 1,
+        "readonly": true,
+        "permissionlessExtension": false
+      }
+    },
+    "error": null,
+    "warnings": [],
+    "evidence": "rpc_observed",
+    "observation": {
+      "profile": "devfolio",
+      "network": "tiramisu",
+      "chainId": 7738577,
+      "blockNumber": "603626",
+      "blockScope": "query_page",
+      "observedAt": "2026-10-15T09:36:58.336Z",
+      "sourceKind": "rpc",
+      "serverVersion": "1.1.24",
+      "configRevision": "2026-10-14.1",
+      "contentRevision": "27b032f009c234b8"
+    },
+    "verificationScope": "point_in_time_rpc_observation",
+    "verifiedApplication": false,
+    "limitation": "A point-in-time read observes only the returned public metadata or receipt. Absence does not identify expiration, deletion, a never-created entity or a pending transaction. A successful receipt does not prove an Arkiv mutation, authorship, application behavior, finality, event eligibility or a judging outcome. Block heights are not civil-time deadlines. Review public evidence locally before sending a hash; its shape alone cannot distinguish a public identifier from a credential.",
+    "references": [
+      "sdk-devfolio/querybuilder",
+      "sdk-devfolio/types",
+      "official/json-rpc/querying-data",
+      "official/json-rpc/mutating-entities",
+      "guides/devfolio-current"
+    ]
+  },
+  "runtimeRouteObservations": [
+    {
+      "status": "observed",
+      "data": {
+        "kind": "entity_metadata",
+        "createdAt": "595453",
+        "updatedAt": "595453",
+        "expiresAt": "1891453",
+        "creationFlags": {
+          "readonly": true,
+          "permissionlessExtension": false
+        }
+      },
+      "error": null,
+      "warnings": [],
+      "observation": {
+        "profile": "devfolio",
+        "network": "tiramisu",
+        "chainId": 7738577,
+        "blockNumber": "603938",
+        "observedAt": "2026-10-15T09:47:22.586Z",
+        "sourceKind": "rpc",
+        "serverVersion": "1.1.24"
+      }
+    },
+    {
+      "status": "observed",
+      "data": {
+        "kind": "entity_metadata",
+        "createdAt": "595453",
+        "updatedAt": "595453",
+        "expiresAt": "1891453",
+        "creationFlags": {
+          "readonly": true,
+          "permissionlessExtension": false
+        }
+      },
+      "error": null,
+      "warnings": [],
+      "observation": {
+        "profile": "devfolio",
+        "network": "tiramisu",
+        "chainId": 7738577,
+        "blockNumber": "603954",
+        "observedAt": "2026-10-15T09:47:55.894Z",
+        "sourceKind": "rpc",
+        "serverVersion": "1.1.24"
+      }
+    }
+  ]
+}

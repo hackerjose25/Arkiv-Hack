@@ -29,7 +29,7 @@ import {
 } from "@/lib/arkiv";
 import {
   compileQuery,
-  demoQuery,
+  publicQuery,
   type Filter,
   type QuerySpec,
 } from "@/lib/query";
@@ -42,12 +42,15 @@ import {
 } from "@/lib/dashboard";
 import { connectWallet, publishDashboard } from "@/lib/wallet";
 import Chart from "./chart";
-import SeedPanel from "./seed-panel";
+import PublicDatabase from "./public-database";
+import McpObservationPanel from "./mcp-observation";
 
 const short = (s: string) => `${s.slice(0, 8)}…${s.slice(-6)}`;
 export default function Studio() {
-  const [section, setSection] = useState<"query" | "dashboard">("query");
-  const [query, setQuery] = useState<QuerySpec>(demoQuery);
+  const [section, setSection] = useState<"public" | "query" | "dashboard">(
+    "public",
+  );
+  const [query, setQuery] = useState<QuerySpec>(publicQuery);
   const [page, setPage] = useState<Page>();
   const [pages, setPages] = useState<Page[]>([]);
   const [pageIndex, setPageIndex] = useState(0);
@@ -61,7 +64,8 @@ export default function Studio() {
   const [editingId, setEditingId] = useState<string>();
   const [title, setTitle] = useState("Untitled dashboard");
   const [description, setDescription] = useState("");
-  const [refresh, setRefresh] = useState(60);
+  const refresh = 30;
+  const [autoRefresh, setAutoRefresh] = useState(true);
   const [account, setAccount] = useState("");
   const [publishing, setPublishing] = useState(false);
   const [publication, setPublication] = useState<{
@@ -74,6 +78,10 @@ export default function Studio() {
   const [sortDesc, setSortDesc] = useState(false);
   const [recovery, setRecovery] = useState("");
   const active = useRef<AbortController | null>(null);
+  const requestBusy = useRef(false);
+  useEffect(() => {
+    requestBusy.current = busy;
+  }, [busy]);
   const detailRequest = useRef<AbortController | null>(null);
   const detailDialog = useRef<HTMLDialogElement | null>(null);
   const detailTrigger = useRef<HTMLElement | null>(null);
@@ -140,7 +148,71 @@ export default function Studio() {
     return result;
   }, [page, sort, sortDesc]);
   const changed = executed !== JSON.stringify(query);
-  async function execute() {
+  useEffect(() => {
+    if (
+      !autoRefresh ||
+      !executed ||
+      executed !== JSON.stringify(query) ||
+      pageIndex !== 0
+    )
+      return;
+    let stopped = false;
+    let failures = 0;
+    let controller: AbortController | undefined;
+    let timer: ReturnType<typeof setTimeout>;
+    async function poll() {
+      if (document.hidden || requestBusy.current) {
+        timer = setTimeout(poll, 30000);
+        return;
+      }
+      controller = new AbortController();
+      active.current = controller;
+      setBusy(true);
+      requestBusy.current = true;
+      try {
+        const result = await runQuery(query, controller.signal);
+        if (stopped || controller.signal.aborted) return;
+        setPage(result);
+        setPages([result]);
+        setLast(new Date().toLocaleTimeString());
+        setError("");
+        failures = 0;
+      } catch (error) {
+        if (stopped || controller.signal.aborted) return;
+        failures++;
+        setError(
+          `Refresh failed; previous results may be stale. ${error instanceof Error ? error.message : "Network unavailable"}`,
+        );
+      } finally {
+        if (!stopped && !controller.signal.aborted) {
+          setBusy(false);
+          requestBusy.current = false;
+        }
+        if (!stopped)
+          timer = setTimeout(
+            poll,
+            Math.min(300000, 30000 * 2 ** Math.min(failures, 3)),
+          );
+      }
+    }
+    const visible = () => {
+      if (!document.hidden && !requestBusy.current) {
+        clearTimeout(timer);
+        void poll();
+      }
+    };
+    timer = setTimeout(poll, 30000);
+    document.addEventListener("visibilitychange", visible);
+    return () => {
+      stopped = true;
+      controller?.abort();
+      clearTimeout(timer);
+      requestBusy.current = false;
+      setBusy(false);
+      document.removeEventListener("visibilitychange", visible);
+    };
+  }, [autoRefresh, executed, query, pageIndex]);
+  async function execute(spec: QuerySpec = query) {
     active.current?.abort();
     const controller = new AbortController();
     active.current = controller;
@@ -149,12 +221,12 @@ export default function Studio() {
     setPage(undefined);
     setPages([]);
     try {
-      const result = await runQuery(query, controller.signal);
+      const result = await runQuery(spec, controller.signal);
       if (controller.signal.aborted) return;
       setPage(result);
       setPages([result]);
       setPageIndex(0);
-      setExecuted(JSON.stringify(query));
+      setExecuted(JSON.stringify(spec));
       setLast(new Date().toLocaleTimeString());
     } catch (e) {
       if (!controller.signal.aborted)
@@ -269,6 +341,13 @@ export default function Studio() {
         <span className="eyebrow nav-label">WORKSPACE</span>
         <nav>
           <button
+            className={section === "public" ? "selected" : ""}
+            onClick={() => setSection("public")}
+          >
+            <Database size={18} />
+            Public Database
+          </button>
+          <button
             className={section === "query" ? "selected" : ""}
             onClick={() => setSection("query")}
           >
@@ -289,8 +368,7 @@ export default function Studio() {
         <button
           className="source"
           onClick={() => {
-            setSection("query");
-            setQuery(demoQuery);
+            setSection("public");
           }}
         >
           <span className="source-dot" />
@@ -335,7 +413,11 @@ export default function Studio() {
           <div className="breadcrumb">
             Workspace <ChevronRight size={13} />
             <span>
-              {section === "query" ? "Query studio" : "Dashboard builder"}
+              {section === "public"
+                ? "Public Database"
+                : section === "query"
+                  ? "Query studio"
+                  : "Dashboard builder"}
             </span>
           </div>
           <div className="top-actions">
@@ -354,14 +436,18 @@ export default function Studio() {
             <div>
               <div className="eyebrow">EXPLORE. UNDERSTAND. BUILD.</div>
               <h1>
-                {section === "query"
-                  ? "From query to clarity."
-                  : "Make your data useful."}
+                {section === "public"
+                  ? "Public Database"
+                  : section === "query"
+                    ? "From query to clarity."
+                    : "Make your data useful."}
               </h1>
               <p>
-                {section === "query"
-                  ? "Explore public Arkiv data and turn it into something worth sharing."
-                  : "Compose a dashboard. Publish its definition with your wallet."}
+                {section === "public"
+                  ? "Browse live public records across Arkiv Tiramisu. No wallet needed."
+                  : section === "query"
+                    ? "Explore public Arkiv data and turn it into something worth sharing."
+                    : "Compose a dashboard. Publish its definition with your wallet."}
               </p>
             </div>
             <a
@@ -380,7 +466,16 @@ export default function Studio() {
               <span>No simulated results are substituted.</span>
             </div>
           )}
-          {section === "query" ? (
+          {section === "public" ? (
+            <PublicDatabase
+              onInspect={inspect}
+              onUseQuery={(spec) => {
+                setQuery(spec);
+                setSection("query");
+                void execute(spec);
+              }}
+            />
+          ) : section === "query" ? (
             <>
               <div className="studio-grid">
                 <section className="panel query-panel">
@@ -398,12 +493,20 @@ export default function Studio() {
                         Match <b>all</b> conditions
                       </span>
                     </div>
-                    <div className="filter-labels">
-                      <span>Indexed attribute</span>
-                      <span>Type</span>
-                      <span>Operator</span>
-                      <span>Value</span>
-                    </div>
+                    {query.filters.length > 0 && (
+                      <div className="filter-labels">
+                        <span>Indexed attribute</span>
+                        <span>Type</span>
+                        <span>Operator</span>
+                        <span>Value</span>
+                      </div>
+                    )}
+                    {!query.filters.length && (
+                      <div className="notice">
+                        No filters. All currently available public entities are
+                        eligible; results load one page at a time.
+                      </div>
+                    )}
                     {query.filters.map((f, i) => (
                       <div className="filter-row" key={i}>
                         <input
@@ -468,7 +571,6 @@ export default function Studio() {
                         <button
                           className="icon-button"
                           aria-label={`Remove filter ${i + 1}`}
-                          disabled={query.filters.length === 1}
                           onClick={() =>
                             setQuery({
                               ...query,
@@ -506,6 +608,13 @@ export default function Studio() {
                       <Plus size={15} />
                       Add condition
                     </button>
+                    <button
+                      className="text-button"
+                      disabled={!query.filters.length}
+                      onClick={() => setQuery({ ...query, filters: [] })}
+                    >
+                      Clear all filters
+                    </button>
                     <div className="query-options">
                       <label>
                         Page size{" "}
@@ -538,7 +647,7 @@ export default function Studio() {
                       <button
                         className="primary"
                         disabled={busy || !!validation}
-                        onClick={execute}
+                        onClick={() => void execute()}
                       >
                         <Play size={14} />
                         {busy ? "Querying…" : "Run query"}
@@ -849,6 +958,18 @@ export default function Studio() {
                   </div>
                 </div>
               </section>
+              <label className="consent">
+                <input
+                  type="checkbox"
+                  checked={autoRefresh}
+                  onChange={(event) => setAutoRefresh(event.target.checked)}
+                />
+                Refresh every 30 seconds · pauses while hidden, while filters
+                change, and on later cursor pages
+              </label>
+              {page?.entities[0] && (
+                <McpObservationPanel entityKey={page.entities[0].key} />
+              )}
             </>
           ) : (
             <>
@@ -881,7 +1002,7 @@ export default function Studio() {
                       min={30}
                       max={3600}
                       value={refresh}
-                      onChange={(e) => setRefresh(Number(e.target.value))}
+                      readOnly
                     />
                   </label>
                 </div>
@@ -1004,7 +1125,6 @@ export default function Studio() {
               {recovery && <pre className="panel panel-body">{recovery}</pre>}
             </>
           )}
-          {section === "query" && <SeedPanel />}
           <footer className="main-footer">
             <span>
               <span className="source-dot" />

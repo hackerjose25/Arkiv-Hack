@@ -1072,10 +1072,12 @@ tr:last-child td {
   }
   .sidebar nav {
     display: flex;
+    flex-wrap: wrap;
     margin-top: 17px;
   }
   .sidebar nav button {
-    flex: 1;
+    flex: 1 1 130px;
+    min-width: 0;
   }
   .sidebar .brand {
     font-size: 19px;
@@ -1191,14 +1193,25 @@ tr:last-child td {
   }
 }
 
-.seed-panel {
-  margin-top: 20px;
+.public-database .panel-head {
+  flex-wrap: wrap;
 }
-.seed-panel summary {
-  padding: 17px 20px;
-  cursor: pointer;
-  color: #94a8bf;
-  font-size: 11px;
+.public-database .panel-head > div {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.public-attributes {
+  display: grid;
+  gap: 6px;
+  max-width: 280px;
+}
+.public-attributes > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.public-attributes small {
+  color: var(--muted);
 }
 .consent {
   display: flex;

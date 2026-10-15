@@ -1,6 +1,6 @@
 # Release and live verification
 
-Status: release preparation, not a deployed or submitted project. Wallet setup and live writes are pending. Never replace pending evidence with offline browser fixtures.
+Status: release preparation, not a deployed or submitted project. Public browsing needs no wallet. Dashboard receipt capture and public release are pending. Never replace pending evidence with offline browser fixtures.
 
 ## Local release checks
 
@@ -8,16 +8,15 @@ Use Node 24 and `npm ci`. Run `npm run lint`, `npm run typecheck`, `npm test`, t
 
 For browser checks, install Chromium with `npx playwright install chromium`, then run `npm run test:e2e`. On Windows, installed Edge is supported with `PLAYWRIGHT_CHANNEL=msedge`. The CI workflow repeats these checks on pushes and pull requests; its remote result is pending until pushed and run.
 
-## Wallet and actual project entities
+## Public data and dashboard publication
 
-1. Install a browser wallet from its official source, such as https://metamask.io/download/. Create/unlock it yourself; no seed phrase or private key belongs in this repository or chat.
-2. Click **Connect wallet** in ArkivSight. Review the request to add/switch to Tiramisu (chain 7738577). Obtain test GLM at https://hub.arkiv.network/faucet. Official network details: https://docs.arkiv.network/networks/tiramisu/.
-3. Expand **Need a dataset? Publish synthetic demo metrics**, review the 12 fictional records and 30-day lifetime, check the consent box, and approve the transaction in the wallet. Save the returned transaction hash and all 12 entity keys after read-back.
-4. Run the default query, adding `$creator` / `addr` / `equals` / your public address. Expect 12 rows for a newly seeded, unexpired dataset. Display category/value as sum: Compute 206, Storage 274, Indexing 252; total 732. These are expected synthetic values, not evidence of a write.
-5. Add a chart, edit its title, and publish a dashboard. Approve this separate wallet transaction. Save the dashboard key and transaction hash after read-back.
-6. Load `/d/<actual-key>` in a clean browser without a wallet. Verify title, creator/owner and page-scoped chart values. Load `examples/independent-consumer/index.html` from a separate HTTP origin and use the actual deployment URL and key. Verify the iframe without a wallet.
-7. Confirm the polling interval, hide/reopen the tab, and check that it resumes. After an additional separately approved matching data write, verify new data appears on a subsequent poll. Polling is not push streaming.
-8. Add actual public evidence to `arkiv/schema.md`, `HISTORY.md`, and `SUBMISSION.md`. Do not mark M1/M4/M5 verified until these steps pass.
+1. Open **Public Database**. Confirm live public entities load automatically, page-scoped counts, snapshot block and canonical creator/owner. Follow Next public page and confirm the snapshot remains pinned. Inspect payload only when needed. No wallet or source-data publication is required.
+2. Click **Open in query studio**. Confirm zero filters work, add a condition then remove the last condition, and test **Clear all filters**. Inspect typed fields, choose a real numeric measure/grouping or a count KPI, and add widgets. Arbitrary publishers have different schemas; there is no universal fixed expected chart total.
+3. For dashboard publication, install/unlock a wallet yourself, click **Connect wallet**, approve switching to Tiramisu (7738577), and obtain test GLM from https://hub.arkiv.network/faucet. Official network details: https://docs.arkiv.network/networks/tiramisu/.
+4. Review the publicly stored title, query and widgets, approve the dashboard-definition transaction, and save its actual hash, entity key and read-back expiry. This is the only publication flow; the synthetic dataset publisher has been removed.
+5. Load `/d/<actual-key>` in a clean browser without a wallet. Verify title, creator/owner and page-scoped chart values. Load `examples/independent-consumer/index.html` from a separate HTTP origin and use the actual deployment URL and key. Verify the iframe without a wallet.
+6. Confirm 30-second polling, hide/reopen the tab, and check that it resumes. Public Database and studio pause auto-refresh on later cursor pages. Polling is not push streaming.
+7. Add actual public evidence to `arkiv/schema.md`, `HISTORY.md`, and `SUBMISSION.md`. Previously created demo entities remain historical on-chain evidence, not the current source-data workflow.
 
 Explicit wallet rejection is retryable. A timeout or failed read-back keeps the publication journal and blocks duplicates. Preserve the journal and reconcile the original transaction before clearing anything; never automatically repeat an uncertain write.
 

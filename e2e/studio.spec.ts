@@ -7,9 +7,11 @@ test("studio validates filters and reports network failures honestly", async ({
     (route) => route.abort("failed"),
   );
   await page.goto("/");
+  await page.getByRole("button", { name: "Query studio", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "From query to clarity." }),
   ).toBeVisible();
+  await page.getByRole("button", { name: "Add condition" }).click();
   await page.getByLabel("Type 1", { exact: true }).selectOption("i32");
   await expect(
     page.getByRole("button", { name: "Run query", exact: true }),
@@ -26,6 +28,10 @@ test("studio validates filters and reports network failures honestly", async ({
 });
 test("mobile does not overflow the viewport", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.route(
+    "**/rpc.tiramisu.db-chain.testnet.arkiv.network/**",
+    (route) => route.abort("failed"),
+  );
   await page.goto("/");
   expect(
     await page.evaluate(
@@ -33,7 +39,7 @@ test("mobile does not overflow the viewport", async ({ page }) => {
     ),
   ).toBe(true);
   await expect(
-    page.getByRole("button", { name: "Run query", exact: true }),
+    page.getByRole("button", { name: "Refresh public data", exact: true }),
   ).toBeVisible();
 });
 test("public view rejects malformed entity key without a wallet", async ({
