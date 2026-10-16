@@ -14,11 +14,11 @@ Not submitted. Pending values below are blockers, not claims of completion.
 
 **License:** MIT
 
-**Live URL:** PENDING deployment and public access verification
+**Live URL:** https://arkivsight.vercel.app — public access verified16 October2026; anonymous Arkiv RPC rate limits remain a reliability limitation.
 
 **Video:** PENDING live demonstration, at most 3 minutes
 
-**Release SHA:** PENDING final reviewed commit
+**Release SHA:** `93b9ecc20fea983fe93fc8bf7deb51cdd81552ce` (deployed app; later documentation commits record release evidence).
 
 ## Problem and solution
 
@@ -36,7 +36,7 @@ Arkiv provides a shared public data layer for indexed source entities and wallet
 - Versioned strict dashboard payload, safe embed generation: `lib/dashboard.ts`.
 - Browser wallet dashboard-definition publication, expiry, readonly flags, journal and read-back: `lib/wallet.ts`. Synthetic data publication was removed. A populated creator-filtered dashboard and successful creation receipt are verified; two older empty definitions remain historical. Portable import/export uses the strict v1 contract.
 - Wallet-free public readers and polling with visibility pause/backoff: `components/public-dashboard.tsx`. Offline tests pass only when recorded in HISTORY; live project entity verification remains PENDING.
-- Independent reuse: `examples/independent-reader/read-dashboard.ts` reads a published definition and queries Tiramisu with the web app stopped; the populated key returned18 records at snapshot638179 (historical empty key returned0 at638008). `/evidence` labels recorded observations and gaps; public readers expose actual query/definition provenance. These new local changes require the reviewed source release and deployed verification.
+- Independent reuse: `examples/independent-reader/read-dashboard.ts` reads a published definition and queries Tiramisu with the web app stopped; the populated key returned18 records at snapshot638179 (historical empty key returned0 at638008). `/evidence` labels recorded observations and gaps; public readers expose actual query/definition provenance. Release93b9ecc is pushed, CI-passed and deployed. Hosted public reader returned18 at639016; hosted embed data was rate-limited during the independent-origin check.
 
 Unfiltered public reads succeeded 15 October 2026, 10:01:19 UTC, at block 604353: two bounded pages of 25 records retained the same snapshot and had distinct keys. The app now starts in Public Database and generates no source data. Historical project writes are listed below; full evidence and current limits are in `arkiv/schema.md` and `arkiv/friction.md`.
 
@@ -51,8 +51,8 @@ Unfiltered public reads succeeded 15 October 2026, 10:01:19 UTC, at block 604353
 | Primary creation transaction | `0x4d939029ea70c4b74018f790d59b0c279b2386dcd319bdd722f1e0e2bd3a298e`; success, creation637419, expiry4525419; verified16 October |
 | Verified historical dashboard creation transactions | `0x867fed3eac0a3b1f5ee2d44cca8818bca2d9e6935762f1cbd4f7aabed16d1a6d` (block 595532), `0x6f3e7d3960913081c30096b91f8d8afe098e398bac5015164084ff0924d79f5b` (595488); both success, but both saved queries return zero |
 | Prepared corrected definition | `examples/public-dashboard.json`; unpublished, canonical creator/expiry table and count KPI, live preview 50 rows at block 636023; requires user-approved wallet publication |
-| Public repo / baseline CI | GitHub API verified public MIT repo; [97bfc7b CI passed](https://github.com/hackerjose25/Arkiv-Hack/actions/runs/38775209165). New local release changes require a new run |
-| Independent live reader/embed URL | PENDING public deployment |
+| Public repo / release CI | GitHub API verified public MIT repo; [93b9ecc CI passed](https://github.com/hackerjose25/Arkiv-Hack/actions/runs/38854629242) |
+| Independent live reader/embed URL | `https://arkivsight.vercel.app/d/<primary-key>` and `/embed/<primary-key>`; hosted public18 verified, independent hosted embed data read429; local cross-origin populated proof exists separately |
 | Time to first successful project write | PENDING user confirmation; earlier ~15-minute estimate was not backed by timing evidence |
 | Team members / eligibility | User to supply |
 | Feedback-call consent | User to decide |

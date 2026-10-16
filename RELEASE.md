@@ -1,6 +1,6 @@
 # Release and live verification
 
-Status: release preparation, not a deployed or submitted project. Public browsing needs no wallet. A populated publisher dashboard and successful receipt are verified; two older empty definitions remain historical observations. Public release is pending. Never replace pending evidence with offline browser fixtures.
+Status: deployed at https://arkivsight.vercel.app on16 October2026; submission remains pending. Vercel Hobby project `hackerjose25s-projects/arkivsight`, deployment `dpl_6pj1sW3tCNrQqyNWLuqMJgD9HqP9`, app revision `93b9ecc20fea983fe93fc8bf7deb51cdd81552ce`. User explicitly authorized Git push and deployment. Root/studio/evidence/example-download/public/embed routes returned200 without login cookies. Hosted public dashboard returned18 actual rows at639016. Separate-origin hosted embed loaded the app but its RPC read returned429 ANON_COST_LIMITED; populated hosted embed proof remains pending. No paid upgrade, wallet action or secrets used. The project overview still offers Connect Git Repository; automatic future deployment is not verified. Public browsing needs no wallet; never replace pending evidence with offline fixtures.
 
 Use existing populated key `0x5dba036694a998c9b9a6eda06d974bace7e30d5947d5090161427f029f83668f` for the reader/embed checks below. Its receipt/query evidence is `arkiv/dashboard-receipt-5dba03.json`; the independent direct SDK observation is `arkiv/independent-read-evidence.json`. No additional wallet signature is needed to read this publication. Steps3–4 apply only if the user chooses to create another definition.
 
@@ -8,7 +8,7 @@ Use existing populated key `0x5dba036694a998c9b9a6eda06d974bace7e30d5947d5090161
 
 Use Node 24 and `npm ci`. Run `npm run lint`, `npm run typecheck`, `npm test`, then `npm run build`. Stop any development server before building. Start the production preview with `npm run start` and open http://127.0.0.1:3000.
 
-For browser checks, install Chromium with `npx playwright install chromium`, then run `npm run test:e2e`. On Windows, installed Edge is supported with `PLAYWRIGHT_CHANNEL=msedge`. The CI workflow repeats these checks on pushes and pull requests. The committed baseline `97bfc7b` has a [successful remote run](https://github.com/hackerjose25/Arkiv-Hack/actions/runs/38775209165), checked 16 October; subsequent local changes need their own CI result after publication.
+For browser checks, install Chromium with `npx playwright install chromium`, then run `npm run test:e2e`. On Windows, installed Edge is supported with `PLAYWRIGHT_CHANNEL=msedge`. The CI workflow repeats these checks on pushes and pull requests. App release `93b9ecc` has a [successful full remote run](https://github.com/hackerjose25/Arkiv-Hack/actions/runs/38854629242), checked16 October, covering install/lint/types/unit/build/Chromium browser tests. Later documentation-only commits do not change the deployed app revision.
 
 ## Public data and dashboard publication
 

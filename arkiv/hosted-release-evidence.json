@@ -1,0 +1,39 @@
+{
+  "recordedAt": "2026-10-16T05:19:15.8610411Z",
+  "origin": "https://arkivsight.vercel.app",
+  "deploymentId": "dpl_6pj1sW3tCNrQqyNWLuqMJgD9HqP9",
+  "sourceCommit": "93b9ecc20fea983fe93fc8bf7deb51cdd81552ce",
+  "ci": {
+    "url": "https://github.com/hackerjose25/Arkiv-Hack/actions/runs/38854629242",
+    "conclusion": "success"
+  },
+  "routesWithoutLogin": {
+    "/": 200,
+    "/studio": 200,
+    "/evidence": 200,
+    "/api/examples/dashboard": 200,
+    "/d/<entity-key>": 200,
+    "/embed/<entity-key>": 200
+  },
+  "entityKey": "0x5dba036694a998c9b9a6eda06d974bace7e30d5947d5090161427f029f83668f",
+  "publicReader": {
+    "rows": 18,
+    "querySnapshotBlock": "639016",
+    "definitionExpiryBlock": "4525419",
+    "walletRequired": false,
+    "mockRoutes": false
+  },
+  "independentEmbed": {
+    "consumerOrigin": "http://127.0.0.1:64345",
+    "iframeOrigin": "https://arkivsight.vercel.app",
+    "shellLoaded": true,
+    "populated": false,
+    "rpcError": "HTTP429 ANON_COST_LIMITED"
+  },
+  "automaticGitDeploymentVerified": false,
+  "limitations": [
+    "Anonymous RPC quota can prevent live reads.",
+    "Evidence page contains predeployment recorded release-gap wording.",
+    "Submission and demo recording remain pending."
+  ]
+}

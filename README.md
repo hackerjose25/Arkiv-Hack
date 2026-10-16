@@ -2,7 +2,7 @@
 
 Turn public Arkiv entities into queries, visualizations and wallet-owned dashboards.
 
-**16 October 2026: live public database browser, no-code queries, charts, portable dashboard JSON and wallet-signed definitions; public deployment pending.** This is an independent MIT tool, not an official Arkiv product. See [HISTORY.md](HISTORY.md) for verified milestones and [HACKATHON.md](HACKATHON.md) for submission gates.
+**Live demo: [arkivsight.vercel.app](https://arkivsight.vercel.app)** — public database browser, no-code queries, charts, portable dashboard JSON and wallet-signed definitions. Deployed16 October2026 from `93b9ecc`. This is an independent MIT tool, not an official Arkiv product. See [HISTORY.md](HISTORY.md) for verified milestones and [HACKATHON.md](HACKATHON.md) for submission gates. Anonymous RPC limits can temporarily prevent live reads.
 
 ## Run locally
 
@@ -64,7 +64,7 @@ Do not automatically retry an uncertain write. **Publication recovery** displays
 
 ## Verification boundaries
 
-Live SDK reads observed the 12 historical project metrics and multiple dashboard definitions from `0x9cC4bc554C544856E9DE2D244F05c0d6E8Be099A`. The populated dashboard `0x5dba036694a998c9b9a6eda06d974bace7e30d5947d5090161427f029f83668f` returned18 records at snapshot638153; its successful creation transaction is `0x4d939029ea70c4b74018f790d59b0c279b2386dcd319bdd722f1e0e2bd3a298e`. The independent reader reproduced18 at638179 without the web app. Keys/receipts are in schema.md. Historical metric values remain synthetic despite their actual on-chain storage. Public deployment and deployed independent embed verification remain pending.
+Live SDK reads observed the 12 historical project metrics and multiple dashboard definitions from `0x9cC4bc554C544856E9DE2D244F05c0d6E8Be099A`. The populated dashboard `0x5dba036694a998c9b9a6eda06d974bace7e30d5947d5090161427f029f83668f` returned18 records at snapshot638153; its successful creation transaction is `0x4d939029ea70c4b74018f790d59b0c279b2386dcd319bdd722f1e0e2bd3a298e`. The independent reader reproduced18 at638179 without the web app. The deployed public dashboard returned18 at639016; a separate-origin consumer loaded its hosted embed but the RPC rejected the data read with429. Keys/receipts are in schema.md. Historical metric values remain synthetic despite their actual on-chain storage. Hosted independent populated embed proof remains pending.
 
 Browser tests use explicitly labeled offline RPC fixtures for populated charts and sharing. For the suite:
 
