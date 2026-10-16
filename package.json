@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "test:live": "tsx scripts/live-read.ts"
+    "test:live": "tsx scripts/live-read.ts",
+    "verify:dashboard": "tsx scripts/verify-dashboard.ts",
+    "read:dashboard": "tsx examples/independent-reader/read-dashboard.ts"
   },
   "repository": {
     "type": "git",

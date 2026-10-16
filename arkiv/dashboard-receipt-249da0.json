@@ -1,0 +1,65 @@
+{
+  "observedAt": "2026-10-16T03:28:17.124Z",
+  "sdk": "0.8.1",
+  "chainId": 7738577,
+  "kind": "published-dashboard",
+  "entity": {
+    "key": "0x249da0c2b8ad2aa5def9d60f963d5c8fbb68084979d7f53054476f87408b3363",
+    "creator": "0x9cC4bc554C544856E9DE2D244F05c0d6E8Be099A",
+    "owner": "0x9cC4bc554C544856E9DE2D244F05c0d6E8Be099A",
+    "createdAt": "595532",
+    "expiresAt": "4483532"
+  },
+  "payloadHash": "0xefb2da0756b60390060718a0e58aa69ed6a9ec3813da77c8a83ab8ee24a68fc2",
+  "creation": {
+    "txHash": "0x867fed3eac0a3b1f5ee2d44cca8818bca2d9e6935762f1cbd4f7aabed16d1a6d",
+    "status": "success",
+    "blockNumber": "595532",
+    "blockHash": "0xa1da7ac3ac45dce18fb438a1bbe5c65f55fce15eb89f9a386d5ec34bfe23c48a",
+    "sender": "0x9cc4bc554c544856e9de2d244f05c0d6e8be099a",
+    "engine": "0x4400000000000000000000000000000000000044",
+    "logIndex": 2,
+    "initialExpiresAt": "4483532",
+    "creationFlags": 1
+  },
+  "query": {
+    "filters": [
+      {
+        "field": "app",
+        "type": "str",
+        "op": "eq",
+        "value": "arkivsight"
+      },
+      {
+        "field": "kind",
+        "type": "str",
+        "op": "eq",
+        "value": "demo_metric"
+      },
+      {
+        "field": "category",
+        "type": "str",
+        "op": "eq",
+        "value": "jose"
+      }
+    ],
+    "limit": 50
+  },
+  "page": {
+    "blockNumber": "635765",
+    "count": 0,
+    "hasNext": false
+  },
+  "widgets": [
+    {
+      "id": "a558b67b",
+      "type": "bar",
+      "aggregation": "sum"
+    }
+  ],
+  "warnings": [
+    "Saved query currently returns zero records",
+    "Counts and chart aggregates are page-scoped; this is not a full-chain count",
+    "This command does not verify a hosted browser, wallet signature or iframe"
+  ]
+}

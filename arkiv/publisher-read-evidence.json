@@ -1,0 +1,22 @@
+{
+  "observedAt": "2026-10-16T04:46:34.629Z",
+  "sdk": "0.8.1",
+  "chainId": 7738577,
+  "query": {
+    "filters": [
+      {
+        "field": "$creator",
+        "type": "addr",
+        "op": "eq",
+        "value": "0x9cC4bc554C544856E9DE2D244F05c0d6E8Be099A"
+      }
+    ],
+    "limit": 50
+  },
+  "snapshotBlock": "638114",
+  "pageCount": 18,
+  "hasNext": false,
+  "allCreatorsMatch": true,
+  "payloadsFetched": false,
+  "scope": "Creator-filtered current query page, not a whole-chain count"
+}

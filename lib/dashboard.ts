@@ -41,6 +41,13 @@ export const defaultWidget: Widget = {
   measure: "value",
   aggregation: "sum",
 };
+export const publicWidget: Widget = {
+  ...defaultWidget,
+  title: "Records by creator",
+  groupBy: "$creator",
+  measure: "$expiresAt",
+  aggregation: "count",
+};
 export function encodeDashboard(input: unknown) {
   const parsed = dashboardSchema.parse(input);
   const bytes = new TextEncoder().encode(JSON.stringify(parsed));
@@ -52,6 +59,21 @@ export function decodeDashboard(bytes: Uint8Array) {
   return dashboardSchema.parse(
     JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes)),
   );
+}
+export function decodeDashboardFile(bytes: Uint8Array) {
+  try {
+    return decodeDashboard(bytes);
+  } catch (error) {
+    if (error instanceof z.ZodError)
+      throw new Error(
+        "This JSON is not an ArkivSight v1 dashboard definition. Import a file exported from Dashboard builder, or use examples/public-dashboard.json. Raw datasets and analysis results cannot be imported here.",
+      );
+    if (error instanceof SyntaxError || error instanceof TypeError)
+      throw new Error(
+        "This file is not valid UTF-8 JSON. Choose an ArkivSight dashboard definition saved as a .json file.",
+      );
+    throw error;
+  }
 }
 export const entityKeySchema = z.string().regex(/^0x[0-9a-fA-F]{64}$/);
 export function embedSnippet(origin: string, key: string, widget?: string) {

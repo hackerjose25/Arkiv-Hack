@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   decodeDashboard,
+  decodeDashboardFile,
   encodeDashboard,
   defaultWidget,
   embedSnippet,
@@ -17,6 +18,25 @@ const spec = {
   createdAt: "2026-10-14T12:00:00.000Z",
 };
 describe("dashboard contract (offline)", () => {
+  it("explains analysis/data file mismatch without dumping schema internals", () => {
+    const analysis = {
+      label: "Offline fixture",
+      probabilities: { low: 0.6 },
+      packet_count: 12,
+      windows: [],
+    };
+    expect(() =>
+      decodeDashboardFile(new TextEncoder().encode(JSON.stringify(analysis))),
+    ).toThrow("Raw datasets and analysis results cannot be imported here");
+    expect(() =>
+      decodeDashboardFile(new TextEncoder().encode("{bad}")),
+    ).toThrow("not valid UTF-8 JSON");
+    expect(() => decodeDashboardFile(new Uint8Array([0xff]))).toThrow(
+      "not valid UTF-8 JSON",
+    );
+    expect(() => decodeDashboardFile(new Uint8Array(32769))).toThrow("32 KiB");
+    expect(decodeDashboardFile(encodeDashboard(spec))).toEqual(spec);
+  });
   it("round trips validated UTF-8 payloads", () =>
     expect(decodeDashboard(encodeDashboard(spec))).toEqual(spec));
   it("continues to load previously published definitions with nonempty filters", () => {

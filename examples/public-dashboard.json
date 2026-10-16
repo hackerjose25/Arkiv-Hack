@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "network": "tiramisu",
+  "title": "Tiramisu public records",
+  "description": "A live, bounded view of existing public Tiramisu entities across publishers. Counts describe the current page. Public testnet content may include synthetic records.",
+  "query": { "filters": [], "limit": 50 },
+  "widgets": [
+    {
+      "id": "page-count",
+      "title": "Records on this page",
+      "type": "kpi",
+      "groupBy": "$creator",
+      "measure": "$expiresAt",
+      "aggregation": "count"
+    },
+    {
+      "id": "public-records",
+      "title": "Public records",
+      "type": "table",
+      "groupBy": "$creator",
+      "measure": "$expiresAt",
+      "aggregation": "count"
+    }
+  ],
+  "refreshSeconds": 30,
+  "createdAt": "2026-10-16T00:00:00.000Z"
+}

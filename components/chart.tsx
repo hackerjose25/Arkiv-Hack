@@ -9,7 +9,7 @@ import {
 } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 import type { Row } from "@/lib/arkiv";
-import { aggregate } from "@/lib/charts";
+import { aggregate, rowAttribute } from "@/lib/charts";
 import type { Widget } from "@/lib/dashboard";
 echarts.use([
   BarChart,
@@ -33,7 +33,8 @@ export default function Chart({
       !target.current ||
       widget.type === "kpi" ||
       widget.type === "table" ||
-      !rows.length
+      !rows.length ||
+      !aggregate(rows, widget).points.length
     )
       return;
     const instance = echarts.init(target.current);
@@ -98,8 +99,8 @@ export default function Chart({
             {rows.map((r) => (
               <tr key={r.key}>
                 <td className="mono">{r.key.slice(0, 16)}…</td>
-                <td>{String(r.attributes[widget.groupBy]?.value ?? "—")}</td>
-                <td>{String(r.attributes[widget.measure]?.value ?? "—")}</td>
+                <td>{String(rowAttribute(r, widget.groupBy)?.value ?? "—")}</td>
+                <td>{String(rowAttribute(r, widget.measure)?.value ?? "—")}</td>
               </tr>
             ))}
           </tbody>
@@ -110,17 +111,36 @@ export default function Chart({
     <>
       <div
         className="chart"
-        ref={target}
         role="img"
         aria-label={`${widget.title}. ${points
           .map((p) => `${p.name}: ${p.value}`)
           .join(", ")
           .slice(0, 2000)}`}
       >
-        {!rows.length ? (
+        <div
+          ref={target}
+          aria-hidden="true"
+          style={{
+            width: "100%",
+            height: "100%",
+            display:
+              widget.type === "kpi" || !rows.length || !points.length
+                ? "none"
+                : undefined,
+          }}
+        />
+        {!rows.length || !points.length ? (
           <div className="empty">
-            <span>No data to visualize</span>
-            <p>Run a query that returns numeric attributes.</p>
+            <span>
+              {rows.length
+                ? "No usable numeric values"
+                : "No data to visualize"}
+            </span>
+            <p>
+              {rows.length
+                ? `The field “${widget.measure}” is missing, non-numeric, or outside safe chart precision. Choose a numeric measure or switch Aggregate to count.`
+                : "Run a query that returns records, then choose Visualize."}
+            </p>
           </div>
         ) : widget.type === "kpi" ? (
           <div className="kpi">

@@ -109,8 +109,34 @@ test("OFFLINE fixture: query pagination, charts and dashboard composition", asyn
   await expect(page.getByRole("button", { name: "Next page" })).toBeDisabled();
   await page.getByRole("button", { name: "Visualize", exact: true }).click();
   await expect(
+    page.getByRole("img", { name: /Records by creator/ }),
+  ).toHaveAttribute("aria-label", new RegExp(`${address}: 1`));
+  await expect(page.locator(".chart canvas")).toBeVisible();
+  await expect(page.getByRole("combobox", { name: /^Aggregate/ })).toHaveValue(
+    "count",
+  );
+  await page.getByRole("combobox", { name: /^Aggregate/ }).selectOption("sum");
+  await page.getByLabel("Group by", { exact: true }).fill("category");
+  await page.getByLabel("Measure", { exact: true }).fill("missing_value");
+  await expect(
+    page.getByText("No usable numeric values", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Add to dashboard" }),
+  ).toBeDisabled();
+  await page.getByLabel("Measure", { exact: true }).fill("value");
+  await page.getByLabel("Widget title").fill("Requests by category");
+  await expect(
     page.getByRole("img", { name: /Offline fixture: 42/ }),
   ).toBeVisible();
+  await page.getByRole("combobox", { name: /^Chart/ }).selectOption("table");
+  await expect(page.locator(".visualize table")).toContainText("42");
+  await page.getByRole("combobox", { name: /^Chart/ }).selectOption("kpi");
+  await expect(page.locator(".visualize .kpi")).toContainText("42");
+  await page.getByRole("combobox", { name: /^Chart/ }).selectOption("line");
+  await expect(page.locator(".chart canvas")).toBeVisible();
+  await page.getByRole("combobox", { name: /^Chart/ }).selectOption("bar");
+  await expect(page.locator(".chart canvas")).toBeVisible();
   await page.getByRole("button", { name: "Add to dashboard" }).click();
   await expect(
     page.getByRole("heading", { name: "Requests by category" }),
@@ -128,6 +154,195 @@ test("OFFLINE fixture: query pagination, charts and dashboard composition", asyn
   ).toBeVisible();
   await expect(page.locator(".dashboard-grid .panel")).toHaveCount(1);
 });
+test("OFFLINE fixture: portable dashboard import validates before replacement and exports safely", async ({
+  page,
+}) => {
+  await mockRPC(page);
+  await page.goto("/studio");
+  await page.getByRole("button", { name: "Dashboard builder" }).click();
+  const input = page.getByLabel("Import dashboard definition (.json)");
+  const file = (value: unknown) => ({
+    name: "dashboard.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(value)),
+  });
+  const portable = JSON.parse(
+    await readFile("examples/public-dashboard.json", "utf8"),
+  );
+  await input.setInputFiles(file(portable));
+  await expect(page.getByLabel("Title", { exact: true })).toHaveValue(
+    portable.title,
+  );
+  await expect(
+    page.getByRole("img", { name: /Records on this page.*Current page: 1/ }),
+  ).toBeVisible();
+  await expect(page.locator(".dashboard-grid .panel")).toHaveCount(2);
+  await expect(page.locator(".dashboard-grid table")).toContainText(address);
+  await expect(page.locator(".dashboard-grid table")).toContainText("4096");
+  await input.setInputFiles(
+    file({
+      label: "Offline analysis fixture",
+      probabilities: { low: 0.6 },
+      packet_count: 12,
+      windows: [],
+    }),
+  );
+  await expect(page.locator(".notice.error")).toContainText(
+    "Raw datasets and analysis results cannot be imported here",
+  );
+  await expect(page.locator(".notice.error")).toContainText(
+    "Your existing draft has not been changed",
+  );
+  await expect(page.locator(".notice.error")).not.toContainText(
+    "invalid_value",
+  );
+  await expect(page.locator(".notice.error")).not.toContainText(
+    "No simulated results",
+  );
+  await expect(page.getByLabel("Title", { exact: true })).toHaveValue(
+    portable.title,
+  );
+  await input.setInputFiles(
+    file({ ...portable, html: "<script>alert(1)</script>" }),
+  );
+  await expect(page.locator(".notice.error")).toBeVisible();
+  await expect(page.getByLabel("Title", { exact: true })).toHaveValue(
+    portable.title,
+  );
+  await expect(page.locator(".dashboard-grid .panel")).toHaveCount(2);
+  await input.setInputFiles({
+    name: "huge.json",
+    mimeType: "application/json",
+    buffer: Buffer.alloc(32769),
+  });
+  await expect(page.locator(".notice.error")).toContainText("32 KiB");
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export dashboard JSON" }).click();
+  const download = await downloadPromise;
+  const exported = JSON.parse(await readFile((await download.path())!, "utf8"));
+  expect(exported).toEqual({ ...portable, createdAt: expect.any(String) });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});
+
+test("OFFLINE fixture: guided publisher filters preserve conditions and distinguish metadata", async ({
+  page,
+}) => {
+  await mockRPC(page);
+  const queries: string[] = [];
+  page.on("request", (request) => {
+    if (
+      request.url().includes("rpc.tiramisu") &&
+      request.postDataJSON()?.method === "arkiv_query"
+    )
+      queries.push(request.postDataJSON().params[0]);
+  });
+  await page.goto("/studio");
+  await page.getByRole("button", { name: "Query studio", exact: true }).click();
+  await page.getByRole("button", { name: "My records", exact: true }).click();
+  await expect(page.getByLabel("Publisher wallet address")).toBeFocused();
+  await page.getByLabel("Publisher wallet address").fill("$creator");
+  await expect(
+    page.getByRole("button", { name: "Apply publisher filter" }),
+  ).toBeDisabled();
+  await page.getByLabel("Publisher wallet address").fill(address);
+  await page.getByRole("button", { name: "Apply publisher filter" }).click();
+  await expect(page.getByLabel("Field 1", { exact: true })).toHaveValue(
+    "$creator",
+  );
+  await expect(page.getByLabel("Type 1", { exact: true })).toBeDisabled();
+  await expect(page.getByLabel("Type 1", { exact: true })).toHaveValue("addr");
+  await expect(page.getByLabel("Value 1", { exact: true })).toHaveValue(
+    address,
+  );
+  await page.getByRole("button", { name: "Run query", exact: true }).click();
+  await expect
+    .poll(() =>
+      queries.some((query) => query.includes(`$creator = addr(${address})`)),
+    )
+    .toBe(true);
+  await expect(
+    page.getByText("Snapshot block 256", { exact: false }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Add condition" }).click();
+  await page.getByLabel("Field 2", { exact: true }).selectOption("value");
+  await expect(page.getByLabel("Type 2", { exact: true })).toHaveValue("i32");
+  await page.getByLabel("Value 2", { exact: true }).fill("10");
+  await page
+    .getByRole("button", { name: "Filter by publisher", exact: true })
+    .click();
+  await page.getByLabel("Publisher relationship").selectOption("$owner");
+  await page.getByLabel("Publisher wallet address").fill(address);
+  await page.getByRole("button", { name: "Apply publisher filter" }).click();
+  await expect(page.getByLabel("Field 3", { exact: true })).toHaveValue(
+    "$owner",
+  );
+  await expect(page.getByLabel("Field 2", { exact: true })).toHaveValue(
+    "value",
+  );
+  await page.getByLabel("Field 2", { exact: true }).selectOption("creator");
+  await expect(page.getByLabel("Type 2", { exact: true })).toHaveValue("str");
+  await expect(page.getByLabel("Type 2", { exact: true })).toBeEnabled();
+  await page.getByRole("button", { name: "Run query", exact: true }).click();
+  await expect
+    .poll(() =>
+      queries.some(
+        (query) =>
+          query.includes("$owner = addr(") &&
+          query.includes("creator = str('10')"),
+      ),
+    )
+    .toBe(true);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});
+
+test("OFFLINE fixture: My records requests only a wallet address, never a signature or chain switch", async ({
+  page,
+}) => {
+  await mockRPC(page);
+  await page.addInitScript((walletAddress) => {
+    const methods: string[] = [];
+    Object.defineProperty(window, "__readingWalletMethods", { value: methods });
+    Object.defineProperty(window, "ethereum", {
+      value: {
+        on() {},
+        removeListener() {},
+        async request({ method }: { method: string }) {
+          methods.push(method);
+          if (method === "eth_requestAccounts") return [walletAddress];
+          throw new Error("Unexpected wallet operation in a public read");
+        },
+      },
+    });
+  }, address);
+  await page.goto("/studio");
+  await page.getByRole("button", { name: "Query studio", exact: true }).click();
+  await page.getByRole("button", { name: "My records", exact: true }).click();
+  await expect(page.getByLabel("Value 1", { exact: true })).toHaveValue(
+    address,
+  );
+  await page.getByRole("button", { name: "Run query", exact: true }).click();
+  await expect(
+    page.getByText("Snapshot block 256", { exact: false }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () =>
+        (window as unknown as { __readingWalletMethods: string[] })
+          .__readingWalletMethods,
+    ),
+  ).toEqual(["eth_requestAccounts"]);
+});
+
 test("OFFLINE fixture: entity dialog traps focus, closes on Escape and restores focus", async ({
   page,
 }) => {
@@ -212,6 +427,18 @@ test("OFFLINE fixture: public route and widget embed load without wallet", async
   ).toBeVisible();
   await expect(
     page.getByRole("img", { name: /Offline fixture: 42/ }),
+  ).toBeVisible();
+  await page.getByText("Query & provenance", { exact: true }).click();
+  await expect(
+    page.getByText("Query snapshot block: 256", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Definition expiry block: 4096", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Creator and owner are authoritative dashboard metadata", {
+      exact: false,
+    }),
   ).toBeVisible();
 });
 test("capture honest empty studio preview", async ({ page }) => {
@@ -324,7 +551,7 @@ test("OFFLINE fixture: Public Database browses all publishers, paginates and ope
   ).toBeVisible();
   await page.getByRole("button", { name: "Add condition" }).click();
   await page.getByRole("button", { name: "Remove filter 1" }).click();
-  await expect(page.getByLabel("Attribute 1", { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("Field 1", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Add condition" }).click();
   await page.getByRole("button", { name: "Add condition" }).click();
   await page.getByRole("button", { name: "Clear all filters" }).click();
@@ -333,6 +560,57 @@ test("OFFLINE fixture: Public Database browses all publishers, paginates and ope
   await expect(
     page.getByText("Snapshot block 256", { exact: false }),
   ).toBeVisible();
+});
+
+test("OFFLINE fixture: anonymous RPC limit pauses reads and recovers without login", async ({
+  page,
+}) => {
+  await page.clock.install();
+  await mockRPC(page);
+  let limited = true;
+  let reads = 0;
+  await page.route(
+    "**/rpc.tiramisu.db-chain.testnet.arkiv.network/**",
+    async (route) => {
+      const req = route.request().postDataJSON();
+      if (req.method !== "arkiv_query") return route.fallback();
+      reads++;
+      if (limited)
+        return route.fulfill({ status: 429, body: "ANON_COST_LIMITED" });
+      return route.fallback();
+    },
+  );
+  await page.goto("/studio");
+  await expect(page.locator(".notice.error")).toContainText(
+    "limited anonymous reads",
+  );
+  await expect(
+    page.getByRole("heading", { name: "Public read unavailable" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Reading public Arkiv records…", { exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Refresh public data" }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Open in query studio" }),
+  ).toBeEnabled();
+  expect(reads).toBe(1);
+  await page.clock.runFor(119000);
+  expect(reads).toBe(1);
+  limited = false;
+  await page.clock.runFor(1000);
+  await expect(
+    page.getByRole("button", { name: `Inspect public entity ${metric.key}` }),
+  ).toBeVisible();
+  expect(reads).toBe(2);
+  await expect(page.locator(".notice.error")).toHaveCount(0);
+  await page
+    .getByLabel("Auto-refresh public records", { exact: true })
+    .uncheck();
+  await page.clock.runFor(60000);
+  expect(reads).toBe(2);
 });
 
 test("OFFLINE fixture: public data and MCP refresh at 30 seconds even for an older 60-second definition", async ({

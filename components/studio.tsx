@@ -35,14 +35,18 @@ import {
 } from "@/lib/query";
 import {
   dashboardSchema,
-  defaultWidget,
+  decodeDashboardFile,
+  publicWidget,
+  encodeDashboard,
   embedSnippet,
   widgetSchema,
   type Widget,
 } from "@/lib/dashboard";
 import { connectWallet, publishDashboard } from "@/lib/wallet";
+import { aggregate } from "@/lib/charts";
 import Chart from "./chart";
 import PublicDatabase from "./public-database";
+import GuidedFilters from "./guided-filters";
 import McpObservationPanel from "./mcp-observation";
 
 const short = (s: string) => `${s.slice(0, 8)}…${s.slice(-6)}`;
@@ -57,9 +61,10 @@ export default function Studio() {
   const [executed, setExecuted] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [importError, setImportError] = useState("");
   const [last, setLast] = useState("");
   const [view, setView] = useState<"table" | "chart">("table");
-  const [widget, setWidget] = useState<Widget>(defaultWidget);
+  const [widget, setWidget] = useState<Widget>(publicWidget);
   const [widgets, setWidgets] = useState<Widget[]>([]);
   const [editingId, setEditingId] = useState<string>();
   const [title, setTitle] = useState("Untitled dashboard");
@@ -114,6 +119,8 @@ export default function Studio() {
   let compiled = "";
   let validation = "";
   try {
+    if (query.filters.some((filter) => !filter.field))
+      throw new Error("Choose a field for every condition.");
     compiled = compileQuery(query);
   } catch (e) {
     validation = e instanceof Error ? e.message : "Invalid query";
@@ -252,14 +259,6 @@ export default function Studio() {
       setBusy(false);
     }
   }
-  function editFilter(index: number, patch: Partial<Filter>) {
-    setQuery({
-      ...query,
-      filters: query.filters.map((f, i) =>
-        i === index ? { ...f, ...patch } : f,
-      ),
-    });
-  }
   async function inspect(row: Row) {
     detailTrigger.current = document.activeElement as HTMLElement | null;
     detailRequest.current?.abort();
@@ -287,17 +286,7 @@ export default function Studio() {
     setPublishing(true);
     setError("");
     try {
-      const spec = dashboardSchema.parse({
-        version: 1,
-        network: "tiramisu",
-        title,
-        description,
-        query,
-        widgets,
-        refreshSeconds: refresh,
-        createdAt: new Date().toISOString(),
-      });
-      setPublication(await publishDashboard(spec));
+      setPublication(await publishDashboard(definition()));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Publication failed");
     } finally {
@@ -319,6 +308,58 @@ export default function Studio() {
       { ...widget, id: crypto.randomUUID().slice(0, 8) },
     ]);
     setSection("dashboard");
+  }
+  function definition() {
+    return dashboardSchema.parse({
+      version: 1,
+      network: "tiramisu",
+      title,
+      description,
+      query,
+      widgets,
+      refreshSeconds: refresh,
+      createdAt: new Date().toISOString(),
+    });
+  }
+  function exportDefinition() {
+    try {
+      const bytes = encodeDashboard(definition());
+      const url = URL.createObjectURL(
+        new Blob([bytes], { type: "application/json" }),
+      );
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "arkivsight-dashboard.json";
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setError("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Cannot export dashboard");
+    }
+  }
+  async function importDefinition(file?: File) {
+    if (!file) return;
+    setImportError("");
+    try {
+      if (file.size > 32768) throw new Error("Dashboard exceeds 32 KiB");
+      const spec = decodeDashboardFile(
+        new Uint8Array(await file.arrayBuffer()),
+      );
+      setTitle(spec.title);
+      setDescription(spec.description);
+      setQuery(spec.query);
+      setWidgets(spec.widgets);
+      setEditingId(undefined);
+      setPublication(undefined);
+      setError("");
+      await execute(spec.query);
+    } catch (e) {
+      setImportError(
+        e instanceof Error
+          ? e.message
+          : "Could not read this dashboard file. Try selecting it again.",
+      );
+    }
   }
   return (
     <div className="shell">
@@ -362,6 +403,10 @@ export default function Studio() {
             <LayoutDashboard size={18} />
             Dashboard builder<span className="count">{widgets.length}</span>
           </button>
+          <a className="sidebar-evidence" href="/evidence">
+            <Code2 size={18} />
+            Evidence &amp; reuse
+          </a>
         </nav>
         <div className="sidebar-rule" />
         <span className="eyebrow nav-label">DATA SOURCES</span>
@@ -487,134 +532,11 @@ export default function Studio() {
                     <span className="tag">NO CODE</span>
                   </div>
                   <div className="panel-body">
-                    <div className="query-intro">
-                      <span className="eyebrow">FILTERS</span>
-                      <span>
-                        Match <b>all</b> conditions
-                      </span>
-                    </div>
-                    {query.filters.length > 0 && (
-                      <div className="filter-labels">
-                        <span>Indexed attribute</span>
-                        <span>Type</span>
-                        <span>Operator</span>
-                        <span>Value</span>
-                      </div>
-                    )}
-                    {!query.filters.length && (
-                      <div className="notice">
-                        No filters. All currently available public entities are
-                        eligible; results load one page at a time.
-                      </div>
-                    )}
-                    {query.filters.map((f, i) => (
-                      <div className="filter-row" key={i}>
-                        <input
-                          aria-label={`Attribute ${i + 1}`}
-                          list="attributes"
-                          value={f.field}
-                          onChange={(e) =>
-                            editFilter(i, { field: e.target.value })
-                          }
-                        />
-                        <select
-                          aria-label={`Type ${i + 1}`}
-                          value={f.type}
-                          onChange={(e) =>
-                            editFilter(i, {
-                              type: e.target.value as Filter["type"],
-                            })
-                          }
-                        >
-                          {[
-                            "str",
-                            "i32",
-                            "u64",
-                            "u256",
-                            "dec",
-                            "bool",
-                            "addr",
-                            "key",
-                          ].map((t) => (
-                            <option key={t}>{t}</option>
-                          ))}
-                        </select>
-                        <select
-                          aria-label={`Operator ${i + 1}`}
-                          value={f.op}
-                          onChange={(e) =>
-                            editFilter(i, {
-                              op: e.target.value as Filter["op"],
-                            })
-                          }
-                        >
-                          {Object.entries({
-                            eq: "equals",
-                            gt: ">",
-                            gte: "≥",
-                            lt: "<",
-                            lte: "≤",
-                            prefix: "starts with",
-                          }).map(([k, v]) => (
-                            <option value={k} key={k}>
-                              {v}
-                            </option>
-                          ))}
-                        </select>
-                        <input
-                          aria-label={`Value ${i + 1}`}
-                          value={f.value}
-                          onChange={(e) =>
-                            editFilter(i, { value: e.target.value })
-                          }
-                        />
-                        <button
-                          className="icon-button"
-                          aria-label={`Remove filter ${i + 1}`}
-                          onClick={() =>
-                            setQuery({
-                              ...query,
-                              filters: query.filters.filter((_, j) => i !== j),
-                            })
-                          }
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
-                    ))}
-                    <datalist id="attributes">
-                      {fields.map(([name]) => (
-                        <option key={name}>{name}</option>
-                      ))}
-                    </datalist>
-                    <button
-                      className="text-button"
-                      disabled={query.filters.length >= 12}
-                      onClick={() =>
-                        setQuery({
-                          ...query,
-                          filters: [
-                            ...query.filters,
-                            {
-                              field: "category",
-                              type: "str",
-                              op: "eq",
-                              value: "",
-                            },
-                          ],
-                        })
-                      }
-                    >
-                      <Plus size={15} />
-                      Add condition
-                    </button>
-                    <button
-                      className="text-button"
-                      disabled={!query.filters.length}
-                      onClick={() => setQuery({ ...query, filters: [] })}
-                    >
-                      Clear all filters
-                    </button>
+                    <GuidedFilters
+                      query={query}
+                      onChange={setQuery}
+                      fields={fields}
+                    />
                     <div className="query-options">
                       <label>
                         Page size{" "}
@@ -871,13 +793,33 @@ export default function Studio() {
                       <label>
                         Measure
                         <input
-                          list="attributes"
+                          list={
+                            widget.type === "table"
+                              ? "attributes"
+                              : "numeric-attributes"
+                          }
+                          disabled={
+                            widget.aggregation === "count" &&
+                            widget.type !== "table"
+                          }
                           value={widget.measure}
                           onChange={(e) =>
                             setWidget({ ...widget, measure: e.target.value })
                           }
                         />
                       </label>
+                      <datalist id="numeric-attributes">
+                        <option>$expiresAt</option>
+                        {fields
+                          .filter(([, types]) =>
+                            [...types].some((type) =>
+                              ["i32", "u64", "u256", "dec"].includes(type),
+                            ),
+                          )
+                          .map(([name]) => (
+                            <option key={name}>{name}</option>
+                          ))}
+                      </datalist>
                       <label>
                         Aggregate
                         <select
@@ -911,6 +853,8 @@ export default function Studio() {
                           !page ||
                           changed ||
                           !widgetSchema.safeParse(widget).success ||
+                          (widget.type !== "table" &&
+                            !aggregate(rows, widget).points.length) ||
                           (!editingId && widgets.length >= 8)
                         }
                       >
@@ -921,7 +865,7 @@ export default function Studio() {
                         <button
                           onClick={() => {
                             setEditingId(undefined);
-                            setWidget(defaultWidget);
+                            setWidget(publicWidget);
                             setSection("dashboard");
                           }}
                         >
@@ -929,6 +873,12 @@ export default function Studio() {
                         </button>
                       )}
                     </div>
+                    <p className="hint">
+                      Count counts records on this page and needs no numeric
+                      measure. Sum and average use numeric indexed fields;
+                      choose a suggested measure. Creator and owner groups use
+                      canonical metadata.
+                    </p>
                     <Chart rows={rows} widget={widget} />
                   </div>
                 )}
@@ -1012,6 +962,42 @@ export default function Studio() {
                   for approximately 90 days. Review the wallet’s test GLM fee
                   before approving.
                 </div>
+                <div className="query-bottom">
+                  <label>
+                    Import dashboard definition (.json)
+                    <input
+                      type="file"
+                      accept=".json,application/json"
+                      disabled={publishing || busy}
+                      onChange={(event) => {
+                        const file = event.currentTarget.files?.[0];
+                        event.currentTarget.value = "";
+                        void importDefinition(file);
+                      }}
+                    />
+                  </label>
+                  <button
+                    disabled={publishing || !widgets.length || !!validation}
+                    onClick={exportDefinition}
+                  >
+                    Export dashboard JSON
+                  </button>
+                </div>
+                {importError && (
+                  <div className="notice error" role="alert">
+                    <strong>Dashboard file could not be imported</strong>
+                    <p>{importError}</p>
+                    <span>Your existing draft has not been changed.</span>
+                  </div>
+                )}
+                <p className="hint">
+                  Definition files contain Arkiv query and widget settings, not
+                  source data. Raw JSON datasets and analysis reports are not
+                  supported here. Import validates and replaces this draft, then
+                  reads its query. Export saves the definition locally.
+                  Publishing requires your wallet; dashboards refresh every 30
+                  seconds.
+                </p>
                 <div className="query-bottom">
                   <button onClick={() => setSection("query")}>
                     <Plus size={14} />

@@ -1,0 +1,43 @@
+{
+  "observedAt": "2026-10-16T03:27:54.843Z",
+  "sdk": "0.8.1",
+  "chainId": 7738577,
+  "kind": "unpublished-definition-preview",
+  "entity": null,
+  "payloadHash": "0x5afeb84ee63dd55b52f8cdcdf243855aa72f886a9ac2d205f48f8e21016ed73c",
+  "creation": null,
+  "query": {
+    "filters": [],
+    "limit": 50
+  },
+  "page": {
+    "blockNumber": "635752",
+    "count": 50,
+    "hasNext": true
+  },
+  "widgets": [
+    {
+      "id": "page-count",
+      "type": "kpi",
+      "aggregation": "count",
+      "result": {
+        "points": [
+          {
+            "name": "Current page",
+            "value": 50
+          }
+        ],
+        "skipped": 0
+      }
+    },
+    {
+      "id": "public-records",
+      "type": "table",
+      "aggregation": "count"
+    }
+  ],
+  "warnings": [
+    "Counts and chart aggregates are page-scoped; this is not a full-chain count",
+    "This command does not verify a hosted browser, wallet signature or iframe"
+  ]
+}

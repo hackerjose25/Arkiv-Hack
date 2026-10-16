@@ -1,0 +1,35 @@
+{
+  "observedAt": "2026-10-16T04:48:45.802Z",
+  "source": "direct-tiramisu-sdk",
+  "chainId": 7738577,
+  "definition": {
+    "key": "0x5dba036694a998c9b9a6eda06d974bace7e30d5947d5090161427f029f83668f",
+    "creator": "0x9cC4bc554C544856E9DE2D244F05c0d6E8Be099A",
+    "owner": "0x9cC4bc554C544856E9DE2D244F05c0d6E8Be099A",
+    "expiresAtBlock": "4525419"
+  },
+  "query": {
+    "filters": [
+      {
+        "field": "$creator",
+        "type": "addr",
+        "op": "eq",
+        "value": "0x9cC4bc554C544856E9DE2D244F05c0d6E8Be099A"
+      }
+    ],
+    "limit": 50
+  },
+  "page": {
+    "snapshotBlock": "638179",
+    "count": 18,
+    "hasNext": false
+  },
+  "widgets": [
+    {
+      "id": "beeb276e",
+      "type": "table",
+      "count": 18
+    }
+  ],
+  "scope": "Current query page only. No global dataset totals or creation receipt verification claimed."
+}

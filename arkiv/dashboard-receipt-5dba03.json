@@ -1,0 +1,52 @@
+{
+  "observedAt": "2026-10-16T04:47:54.305Z",
+  "sdk": "0.8.1",
+  "chainId": 7738577,
+  "kind": "published-dashboard",
+  "entity": {
+    "key": "0x5dba036694a998c9b9a6eda06d974bace7e30d5947d5090161427f029f83668f",
+    "creator": "0x9cC4bc554C544856E9DE2D244F05c0d6E8Be099A",
+    "owner": "0x9cC4bc554C544856E9DE2D244F05c0d6E8Be099A",
+    "createdAt": "637419",
+    "expiresAt": "4525419"
+  },
+  "payloadHash": "0x0afb507ad2bd410a6a3d70ec02c198cfcf527baf0151256049b91facb704125b",
+  "creation": {
+    "txHash": "0x4d939029ea70c4b74018f790d59b0c279b2386dcd319bdd722f1e0e2bd3a298e",
+    "status": "success",
+    "blockNumber": "637419",
+    "blockHash": "0x16541dea2a07f3915bf3e36b269fd329b55d5aeedf2c5db79c110ff9d87058f6",
+    "sender": "0x9cc4bc554c544856e9de2d244f05c0d6e8be099a",
+    "engine": "0x4400000000000000000000000000000000000044",
+    "logIndex": 0,
+    "initialExpiresAt": "4525419",
+    "creationFlags": 1
+  },
+  "query": {
+    "filters": [
+      {
+        "field": "$creator",
+        "type": "addr",
+        "op": "eq",
+        "value": "0x9cC4bc554C544856E9DE2D244F05c0d6E8Be099A"
+      }
+    ],
+    "limit": 50
+  },
+  "page": {
+    "blockNumber": "638153",
+    "count": 18,
+    "hasNext": false
+  },
+  "widgets": [
+    {
+      "id": "beeb276e",
+      "type": "table",
+      "aggregation": "count"
+    }
+  ],
+  "warnings": [
+    "Counts and chart aggregates are page-scoped; this is not a full-chain count",
+    "This command does not verify a hosted browser, wallet signature or iframe"
+  ]
+}

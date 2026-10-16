@@ -18,12 +18,20 @@ export default function PublicDatabase({
   const [error, setError] = useState("");
   const [last, setLast] = useState("");
   const [revision, setRevision] = useState(0);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [cooldownUntil, setCooldownUntil] = useState(0);
+  const nextAttempt = useRef(0);
   const active = useRef<AbortController | null>(null);
   const running = useRef(false);
   const failures = useRef(0);
   const page = pages[index];
-  const refresh = useCallback(async () => {
-    if (running.current || document.hidden) return;
+  const refresh = useCallback(async (manual = false) => {
+    if (
+      running.current ||
+      document.hidden ||
+      (!manual && Date.now() < nextAttempt.current)
+    )
+      return;
     running.current = true;
     setBusy(true);
     active.current?.abort();
@@ -37,13 +45,26 @@ export default function PublicDatabase({
       setLast(new Date().toLocaleTimeString());
       setError("");
       failures.current = 0;
+      nextAttempt.current = 0;
+      setCooldownUntil(0);
     } catch (error) {
       if (controller.signal.aborted) return;
       failures.current++;
-      setError(
+      const message =
         error instanceof Error
           ? error.message
-          : "Public Arkiv data is unavailable",
+          : "Public Arkiv data is unavailable";
+      const limited = /ANON_COST_LIMITED|\b429\b/.test(message);
+      const delay = Math.min(
+        300000,
+        (limited ? 60000 : 30000) * 2 ** Math.min(failures.current, 3),
+      );
+      nextAttempt.current = Date.now() + delay;
+      if (limited) setCooldownUntil(nextAttempt.current);
+      setError(
+        limited
+          ? "Arkiv’s public RPC has temporarily limited anonymous reads (HTTP 429). This does not require a wallet or Vercel login. Close unused live dashboard tabs and allow the cooldown to finish."
+          : message,
       );
     } finally {
       if (active.current === controller) {
@@ -63,7 +84,15 @@ export default function PublicDatabase({
     };
   }, [refresh]);
   useEffect(() => {
-    if (index !== 0) return;
+    if (!cooldownUntil) return;
+    const timer = setTimeout(
+      () => setCooldownUntil(0),
+      Math.max(0, cooldownUntil - Date.now()),
+    );
+    return () => clearTimeout(timer);
+  }, [cooldownUntil]);
+  useEffect(() => {
+    if (index !== 0 || !autoRefresh) return;
     let timer: ReturnType<typeof setTimeout>;
     const schedule = () => {
       timer = setTimeout(
@@ -71,13 +100,14 @@ export default function PublicDatabase({
           if (document.hidden || running.current) schedule();
           else void refresh();
         },
-        Math.min(300000, 30000 * 2 ** Math.min(failures.current, 3)),
+        Math.max(30000, nextAttempt.current - Date.now()),
       );
     };
     const visible = () => {
       if (!document.hidden) {
         clearTimeout(timer);
-        if (!running.current) void refresh();
+        if (!running.current && Date.now() >= nextAttempt.current)
+          void refresh();
         else schedule();
       }
     };
@@ -87,7 +117,7 @@ export default function PublicDatabase({
       clearTimeout(timer);
       document.removeEventListener("visibilitychange", visible);
     };
-  }, [index, revision, refresh]);
+  }, [index, revision, refresh, autoRefresh]);
   async function next() {
     if (!page || running.current) return;
     running.current = true;
@@ -122,14 +152,14 @@ export default function PublicDatabase({
           <span className="count">{page?.entities.length ?? 0}</span>
         </div>
         <div>
-          <button disabled={busy} onClick={() => void refresh()}>
+          <button
+            disabled={busy || !!cooldownUntil}
+            onClick={() => void refresh(true)}
+          >
             <RefreshCw size={14} />
             Refresh public data
           </button>
-          <button
-            disabled={!page || busy}
-            onClick={() => onUseQuery(publicQuery)}
-          >
+          <button disabled={busy} onClick={() => onUseQuery(publicQuery)}>
             Open in query studio
           </button>
         </div>
@@ -144,6 +174,14 @@ export default function PublicDatabase({
         <div className="notice error" role="alert">
           {pages.length ? "Previous results may be stale. " : ""}
           {error.slice(0, 1600)} No simulated results are substituted.
+          {!!cooldownUntil && (
+            <p>
+              Reads paused until {new Date(cooldownUntil).toLocaleTimeString()}.{" "}
+              {autoRefresh
+                ? "Automatic retry will follow."
+                : "Refresh manually afterward."}
+            </p>
+          )}
         </div>
       )}
       {page?.entities.length ? (
@@ -213,10 +251,10 @@ export default function PublicDatabase({
         <div className="empty">
           <Database size={28} />
           <h3>
-            {busy
-              ? "Reading public Arkiv records…"
-              : error
-                ? "Public read unavailable"
+            {error
+              ? "Public read unavailable"
+              : busy
+                ? "Reading public Arkiv records…"
                 : "No public entities returned"}
           </h3>
           <p>Reads need no wallet. Only live network results appear here.</p>
@@ -229,11 +267,23 @@ export default function PublicDatabase({
             : "Awaiting public network data"}
           {last ? ` · Updated ${last}` : ""}
           <br />
-          {index
-            ? "Auto-refresh paused while browsing cursor pages"
-            : "Refresh every 30 seconds · pauses while hidden"}
+          {cooldownUntil
+            ? "Rate-limit cooldown · no reads during cooldown"
+            : !autoRefresh
+              ? "Auto-refresh paused"
+              : index
+                ? "Auto-refresh paused while browsing cursor pages"
+                : "Refresh every 30 seconds · pauses while hidden"}
         </span>
         <div>
+          <label>
+            <input
+              type="checkbox"
+              checked={autoRefresh}
+              onChange={(event) => setAutoRefresh(event.target.checked)}
+            />{" "}
+            Auto-refresh public records
+          </label>
           <button
             disabled={busy || !index}
             onClick={() => setIndex((value) => value - 1)}
@@ -241,7 +291,7 @@ export default function PublicDatabase({
             Previous public page
           </button>
           <button
-            disabled={busy || !page?.hasNextPage()}
+            disabled={busy || !!cooldownUntil || !page?.hasNextPage()}
             onClick={() => void next()}
           >
             Next public page

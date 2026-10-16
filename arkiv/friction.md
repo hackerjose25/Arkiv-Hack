@@ -1,6 +1,6 @@
 # Arkiv developer friction — measured integration findings
 
-Updated 14 October 2026, Codex. Windows; system Node 20.18.0/npm 11.13.0, bundled Node 24.19.0 used for Vitest. Supported project runtime Node >=22.13. SDK **0.8.1**, viem **2.57.7**. Tiramisu chain **7738577**, public HTTP RPC `https://rpc.tiramisu.db-chain.testnet.arkiv.network`. Baseline commit **6265194**; implementation currently uncommitted. No signing key, API key or project wallet used.
+Updated 16 October 2026, Codex. Windows; system Node 20.18.0/npm 11.13.0, bundled Node 24.19.0 used for verification. Supported project runtime Node >=22.13. SDK **0.8.1**, viem **2.57.7**. Tiramisu chain **7738577**, public HTTP RPC `https://rpc.tiramisu.db-chain.testnet.arkiv.network`. Documentation baseline **6265194**; current reviewed source baseline **97bfc7b**. Historical user-wallet writes and their receipts are verified below; current audit calls are read-only. No private key or API key is required by the frontend.
 
 ## F-001 — Certificate validation blocked first network access, then recovered
 
@@ -57,21 +57,47 @@ Updated 14 October 2026, Codex. Windows; system Node 20.18.0/npm 11.13.0, bundle
 
 ## Local tooling findings (not Arkiv defects)
 
+- 16 October visualization report: Query studio still initialized a category/value sum chart, inherited from the retired demo. Actual public records observed in the app use publisher-specific fields (including baseload project/random fields), so those defaults can exclude every row. Changed new-draft defaults to count by canonical creator; missing numeric measures now show an explanation and cannot be added as a blank widget. Kept the chart renderer's DOM separate from React empty/KPI messages when switching chart types. Live browser verification showed34 and16 creator-group records (50 total) at snapshot636689 and one rendered chart canvas. This is an application default/rendering correction, not an SDK/RPC defect; no on-chain definition was rewritten.
+
 - Sandboxed npm DNS requests failed; permitted network execution succeeded.
 - Vitest sandbox temporary-file rename returned EPERM; running under bundled Node 24.19.0 outside sandbox passed the unit suite.
 - Playwright browser download failed with ECONNRESET/ENOTFOUND; installed Microsoft Edge runs browser tests via PLAYWRIGHT_CHANNEL=msedge.
 - Two simultaneous Next development instances corrupted generated build artifacts; stop both, rebuild, and run a single production preview before browser verification. No source data lost.
 - Initial dependencies had 10 audit findings. Updated Vitest to 4.1.11, overrode PostCSS with 8.5.30, replaced Next lint plugin's unpatched braces dependency chain with standard TypeScript ESLint. Latest install audit: 0 vulnerabilities. Next emits a missing-Next-plugin warning; separate lint/typecheck remain required.
-- Remote font requests replaced with locally served Fontsource assets.
+- Earlier remote font requests were replaced with locally served Fontsource assets. The later landing theme uses external Inter/Bubbledot fonts and a video with local/system fallbacks; external availability remains a release consideration.
 
-## Not yet tested
+## Historical local re-verification
 
 ### 15 October 2026 re-verification
 
 Sandbox execution of the public read script failed at `eth_chainId` with `ENOTFOUND`. The same script outside sandbox network restrictions succeeded at 04:37:58 UTC, chain 7738577, block 594656; the namespace was empty, and two metadata-only cursor pages returned distinct keys. See schema.md for the observed keys. This is a local execution restriction, not evidence of an Arkiv outage. TLS validation remained enabled.
 
-The sandbox temporary-file rename restriction also reproduced in Vitest; the same suite outside it passed. Wallet safety tests use mocked providers and never broadcast transactions. Live seed and dashboard writes remain pending because the user has no wallet installed.
+The sandbox temporary-file rename restriction also reproduced in Vitest; the same suite outside it passed. Wallet safety tests use mocked providers and never broadcast transactions. At that early session the user had no installed wallet; later user-wallet writes are recorded in schema.md and supersede that old blocker. The synthetic publisher has since been removed from the product.
 
-Wallet transaction, funded-gas workflow, synthetic seed read-back, dashboard save/read-back, live independent public/embed load, expiry extension, WebSockets, deployment/faucet sign-in and submission. User confirmed **no wallet installed**. No transactions were broadcast. Required next action: user installs an EOA wallet, obtains test GLM, and signs the reviewed seed through the app; capture the real receipt and keys before marking write milestones complete.
+## F-007 — Creation receipts recovered with exact-block event queries
+
+- Expected: recover missing transaction hashes for two known dashboard entity keys without another wallet signature or full-chain scan.
+- Repro: `npm run verify:dashboard -- --key <known-key>`; read entity metadata, request `EntityCreated` from SDK-exported `ENTITY_EVENTS_ABI` at exactly `entity.createdAt`, then read its transaction receipt. Engine address confirmed against installed SDK 0.8.1 `src/consts.ts`.
+- Actual, 16 October: receipts `0x867fed3eac0a3b1f5ee2d44cca8818bca2d9e6935762f1cbd4f7aabed16d1a6d` (block 595532) and `0x6f3e7d3960913081c30096b91f8d8afe098e398bac5015164084ff0924d79f5b` (595488) both succeeded. Engine address, matching creation event/key, creator/sender, block hash, readonly flags and expiry were checked. Evidence: `dashboard-receipt-249da0.json`, `dashboard-receipt-8ca8fd.json`.
+- Both saved queries still include `category = str('jose')` and returned zero at observations 635765 and 635783. Receipt success does not mean a useful dashboard result. The immutable definitions need a new, reviewed publication; the reader cannot silently repair them.
+- Prepared replacement: `examples/public-dashboard.json` uses no filters and a count KPI/table. The initial preview returned 50 records at block635752 but kind/value attributes were absent from current baseload records. Fixed widget system-field resolution and switched the table to canonical creator/expiry metadata. Final preview: 50 records at636023; `prepared-dashboard-provenance-evidence.json` explicitly labels it unpublished. Portable import/export allows moving this reviewed definition into a wallet browser. No synthetic source rows are generated.
+- Outcome: receipt evidence recovered through read-only calls; no new transaction or signing request. The current connected browser has no wallet session, so corrected publication still needs the user's wallet browser.
+
+## F-008 — Guided canonical filters and an existing populated publication
+
+- User reproduction: entering `$creator` in the address value box produced an invalid-address error; the field box still contained `field`. This is application guidance friction, not an SDK failure. Canonical fields now have readable choices with their types fixed; My records reads the connected address only, and Filter by publisher accepts a pasted address. Observed attribute types guide custom fields. Shortcuts preserve other conditions and require Run query.
+- Actual creator-only query returned18 records at block638114, all with matching authoritative creator metadata (`publisher-read-evidence.json`). No payload was fetched for that check.
+- Read-only discovery found an already-published, populated dashboard `0x5dba036694a998c9b9a6eda06d974bace7e30d5947d5090161427f029f83668f`. Exact-block receipt verification confirmed successful creation transaction `0x4d939029ea70c4b74018f790d59b0c279b2386dcd319bdd722f1e0e2bd3a298e`, readonly definition, expiry4525419, and18 query rows at638153. This supersedes the earlier assumption that a new publication was necessary; no new signature or write was made.
+- A standalone SDK consumer, with the Next server stopped, independently returned18 rows at638179. Later actual public reader and cross-origin iframe returned18 rows at638310/638337 without wallet access or mocked routes. The iframe's displayed update advanced after polling. Evidence: `dashboard-receipt-5dba03.json`, `independent-read-evidence.json`, `live-reader-evidence.json`. These are local live observations, not public-hosting evidence or new-write propagation proof.
+
+## F-009 — Anonymous public RPC rejected a browser read
+
+- Actual user screenshot,16 October: Public Database `arkiv_query` to the public Tiramisu RPC returned HTTP429 with `ANON_COST_LIMITED`, SDK0.8.1/viem2.57.7. This is upstream anonymous rate limiting, unrelated to hosting authentication. The response does not establish the quota duration, IP scope or exact cause of exhaustion; multiple polling readers can add request load.
+- Official [access-key guide](https://docs.arkiv.network/start-here/access-keys/) and [query guide](https://docs.arkiv.network/typescript-sdk/querying-data/) confirm strict anonymous endpoint limits and server-only key handling. No access key requested, exposed or installed, and no repeated live quota probes made.
+- App remedy: Public Database shows a concise rate-limit explanation, pauses manual/automatic reads for120seconds initially (increasing to300seconds on repeated failures), respects cooldown on tab visibility changes, preserves prior rows as stale, and offers an auto-refresh pause control. Query studio can be opened without a successful public sample. Error state takes precedence over the loading heading during retries. This reduces avoidable traffic; it cannot guarantee an upstream quota reset. Other independent public/embed readers still have their existing polling/backoff policy.
+
+## Still unverified
+
+Public deployment and hosted independent embed, expiry extension, WebSockets, final video and submission. Existing creation receipts do not prove a fresh UI signature in the current app. Reuse the verified populated dashboard for the release; no duplicate publication or seed step is needed. The prepared no-filter example remains an unpublished configuration file.
 
 Sources: [official query guide](https://docs.arkiv.network/typescript-sdk/querying-data/), [skills](https://github.com/Arkiv-Network/skills), [AI tools](https://hub.arkiv.network/ai-tools). Do not submit this report as feedback without the user's separate authorization.

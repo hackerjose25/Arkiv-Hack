@@ -8,6 +8,7 @@ import {
 } from "@/lib/dashboard";
 import Chart from "./chart";
 import McpObservationPanel from "./mcp-observation";
+import { compileQuery } from "@/lib/query";
 export default function PublicDashboard({
   entityKey,
   embed = false,
@@ -23,12 +24,16 @@ export default function PublicDashboard({
   const [last, setLast] = useState("");
   const [creator, setCreator] = useState("");
   const [owner, setOwner] = useState("");
+  const [snapshot, setSnapshot] = useState("");
+  const [expiry, setExpiry] = useState("");
   useEffect(() => {
     setSpec(undefined);
     setRows([]);
     setLast("");
     setCreator("");
     setOwner("");
+    setSnapshot("");
+    setExpiry("");
     setError("");
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout>;
@@ -61,6 +66,8 @@ export default function PublicDashboard({
         setRows(page.entities);
         setCreator(entity.creator);
         setOwner(entity.owner);
+        setSnapshot(page.blockNumber.toString());
+        setExpiry(entity.expiresAt.toString());
         setLast(new Date().toLocaleTimeString());
         setError("");
         failures = 0;
@@ -134,6 +141,31 @@ export default function PublicDashboard({
         {last ? ` · Updated ${last}` : ""}
         {creator && <p className="mono">Creator: {creator}</p>}
         {owner && <p className="mono">Owner: {owner}</p>}
+        {spec && (
+          <details className="reader-provenance">
+            <summary>Query &amp; provenance</summary>
+            <p className="mono">Definition key: {entityKey}</p>
+            <p>Query snapshot block: {snapshot}</p>
+            <p>Definition expiry block: {expiry}</p>
+            <p>
+              Page limit: {spec.query.limit} · All chart totals describe this
+              fetched page.
+            </p>
+            <pre>{compileQuery(spec.query)}</pre>
+            <p>
+              Creator and owner are authoritative dashboard metadata. They
+              identify the definition's author and current owner, not the
+              authors of every source record.
+            </p>
+            <a
+              href="/evidence"
+              target={embed ? "_blank" : undefined}
+              rel="noreferrer"
+            >
+              Recorded evidence &amp; reuse examples
+            </a>
+          </details>
+        )}
         <p>
           Polling pauses while hidden. Expired or deleted definitions may become
           unavailable.

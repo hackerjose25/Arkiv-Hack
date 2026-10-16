@@ -12,6 +12,8 @@ test("studio validates filters and reports network failures honestly", async ({
     page.getByRole("heading", { name: "From query to clarity." }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Add condition" }).click();
+  await page.getByLabel("Field 1", { exact: true }).selectOption("__custom");
+  await page.getByLabel("Custom attribute 1", { exact: true }).fill("app");
   await page.getByLabel("Type 1", { exact: true }).selectOption("i32");
   await expect(
     page.getByRole("button", { name: "Run query", exact: true }),

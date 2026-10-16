@@ -2,7 +2,7 @@
 
 Turn public Arkiv entities into queries, visualizations and wallet-owned dashboards.
 
-**15 October 2026: live public database browser, no-code queries, charts and wallet-signed dashboard definitions; public deployment pending.** This is an independent MIT tool, not an official Arkiv product. See [HISTORY.md](HISTORY.md) for verified milestones and [HACKATHON.md](HACKATHON.md) for submission gates.
+**16 October 2026: live public database browser, no-code queries, charts, portable dashboard JSON and wallet-signed definitions; public deployment pending.** This is an independent MIT tool, not an official Arkiv product. See [HISTORY.md](HISTORY.md) for verified milestones and [HACKATHON.md](HACKATHON.md) for submission gates.
 
 ## Run locally
 
@@ -30,23 +30,30 @@ The default live check reads one bounded page across public publishers. The opti
 ## What is implemented
 
 - No-code AND filters with exact SDK types: str, i32, u64, u256, dec, bool, addr, key; equality, numeric comparisons, and string prefixes.
+- Guided field choices show **Created by**, **Owned by**, **Entity key** and **Expiry block** with fixed canonical types. Indexed fields discovered on the current page infer their type when unambiguous; custom fields remain available. Operators are limited to those supported for the selected type. **My records** requests only a wallet address, with no signature or network switch; **Filter by publisher** accepts a pasted address without connecting a wallet. Shortcuts preserve other conditions and apply when you select Run query. Changing wallet accounts does not silently rewrite an existing query.
 - **Public Database** sidebar section and default workspace view: automatically reads live public entities across publishers, displays indexed attributes and canonical creator/owner, inspects records on demand, and walks cursor pages. Open its query in the studio to build charts.
 - Zero user filters are supported. Remove the last condition or click **Clear all filters**. SDK 0.8.1 requires an indexed predicate, so the match-all equivalent is `$expiresAt >= u64(0)`, including every currently queryable entity without an app/dataset/creator restriction.
 - Direct browser-to-Tiramisu reads; 10–100 rows per page, snapshot-pinned cursor pagination, canonical creator/owner, bounded payload inspection, and observed attribute schema.
-- Table, bar, line and KPI views; count, sum and average; page-only sorting and aggregation. Large integers beyond safe JS chart precision are excluded. Decimal charts use approximate JavaScript arithmetic.
+- Table, bar, line and KPI views; count, sum and average; page-only sorting and aggregation. Widgets can use canonical `$creator`, `$owner`, `$key` and `$expiresAt` as well as indexed attributes. System fields always resolve from authoritative metadata. Large integers beyond safe JS chart precision are excluded. Decimal charts use approximate JavaScript arithmetic.
+- Query studio starts with **Records by creator**, a count chart that works without publisher-specific numeric fields. For sum or average, choose a numeric measure suggested from the current page. Missing/non-numeric measures show an explanation and cannot be added as an empty chart. Chart, table and KPI switches keep renderer-owned elements separate from empty-state messages.
 - Dashboard composition: one shared query, up to eight ordered widgets, titles, description, and 30-second polling. Readers use 30 seconds even for older definitions; the v1 parser retains compatibility with saved refreshSeconds values from 30–3600. This v1 deliberately uses a CSS grid and one query instead of the originally proposed multi-query/freeform layout.
-- Versioned Zod-validated definitions; browser-wallet publication, readonly creation, receipt journal and strict read-back. **Real wallet execution remains untested.**
+- Versioned Zod-validated definitions; browser-wallet publication, readonly creation, receipt journal and strict read-back. A populated creator-filtered dashboard and its creation receipt are verified in [schema.md](arkiv/schema.md); two older empty definitions remain labeled historical evidence.
+- Import/export dashboard definitions in Dashboard builder. These files hold Arkiv query and widget settings; this control does not import local datasets, packet captures or model-analysis reports. Imports enforce the same strict schema and 32 KiB limit as public readers before replacing the draft; invalid files show a concise explanation and preserve the draft. Export moves a reviewed definition between browsers without publishing it. Importing uses this app's 30-second refresh policy.
 - `/d/[key]` and `/embed/[key]?widget=overview` public readers. They require no wallet, pause polling while hidden, cancel on unmount, and back off after failure. Offline browser fixtures are not on-chain proof.
 - [Independent iframe consumer](examples/independent-consumer/index.html), served on another origin using any static file server.
+- [Independent SDK reader](examples/independent-reader/README.md): `npm run read:dashboard -- --key <published-key>` works with the Next server stopped. It reuses the MIT validator/compiler/transforms and reads the definition and first query page directly from Tiramisu, with no wallet or app HTTP API.
+- `/evidence` presents dated receipt/query observations, source/contract links, explicit release gaps and a downloadable unpublished public-records definition. These are recorded observations, not live status. Public and embed readers expose their actual query snapshot, definition expiry, canonical creator/owner and compiled query under **Query & provenance**.
 - Query studio refreshes the first result page every 30 seconds after Run query. It pauses when hidden, while filters are changed, and on later cursor pages so pagination retains its snapshot. Uncheck the refresh control to pause it manually. Failures retain stale results and back off.
 - Live MCP metadata panel: the official Devfolio endpoint observes one public entity key, showing query-page block, observation time and expiry. Its bounded server route is separate from chart reads; an MCP outage does not replace or prevent direct Arkiv data queries.
 
 No backend database, private indexer, API keys or shared signing account. Payloads render as text; no arbitrary scripts or HTML are executed. A namespace is not proof of identity: use the `$creator` filter when choosing a trusted publisher. Creator identifies the original creator, not institutional verification.
 
+The anonymous public RPC has strict limits. HTTP429 / `ANON_COST_LIMITED` means Arkiv is limiting reads; Vercel sign-in does not change that quota. Public Database pauses reads for at least two minutes after this response, backs off further on repeated failures, retains any previous results as stale, and offers an auto-refresh pause control. Visibility changes respect the cooldown. Close unused live readers to reduce requests; a cooldown does not guarantee the upstream quota has reset. The [official access-key guide](https://docs.arkiv.network/start-here/access-keys/) describes higher limits; keys must stay out of browser code. No key or authenticated proxy is configured in this build.
+
 ## Explore public data and publish a dashboard
 
 1. Open the app. **Public Database** automatically loads the latest 50 live public records; use Next public page for more. Reads require no wallet. Totals describe the current page, not the entire database.
-2. Inspect a record and its indexed attribute types. Click **Open in query studio** to query across all publishers. Optionally add filters for an app, category or authoritative `$creator`. Remove individual conditions or use **Clear all filters** to return to all public entities.
+2. Inspect a record and its indexed attribute types. Click **Open in query studio** to query across all publishers. Use **My records**, or **Filter by publisher** and paste a wallet address. Choose **Created by** for original authorship or **Currently owned by** for current ownership. For other filters, Add condition and choose a field; canonical metadata types are selected automatically. Remove individual conditions or use **Clear all filters** to return to all public entities.
 3. Run the query. In Visualize, choose grouping/measure fields that actually exist in the result page, or use a count KPI. Missing or unsafe numeric values are excluded; arbitrary public records do not share one schema.
 4. Add widgets and name the dashboard. To publish its definition only, connect an EIP-1193 wallet, select Tiramisu (7738577), obtain test GLM from the [faucet](https://hub.arkiv.network/faucet), review the public definition and approve the transaction. No dataset-publishing or synthetic-seeding flow exists.
 5. Record the confirmed transaction and dashboard entity key. Open `/d/<key>` without a wallet and test its iframe on a separate origin. Readers query Arkiv directly and poll every 30 seconds.
@@ -57,7 +64,7 @@ Do not automatically retry an uncertain write. **Publication recovery** displays
 
 ## Verification boundaries
 
-Live SDK reads subsequently observed all 12 project metrics and two dashboard definitions from `0x9cC4bc554C544856E9DE2D244F05c0d6E8Be099A`; keys are in schema.md. MCP `verify_entity` independently observed a project metric at block 603626 on 15 October. These are synthetic values actually stored on Tiramisu. Transaction receipt capture, corrected public dashboard filters, public deployment and live independent embed remain pending.
+Live SDK reads observed the 12 historical project metrics and multiple dashboard definitions from `0x9cC4bc554C544856E9DE2D244F05c0d6E8Be099A`. The populated dashboard `0x5dba036694a998c9b9a6eda06d974bace7e30d5947d5090161427f029f83668f` returned18 records at snapshot638153; its successful creation transaction is `0x4d939029ea70c4b74018f790d59b0c279b2386dcd319bdd722f1e0e2bd3a298e`. The independent reader reproduced18 at638179 without the web app. Keys/receipts are in schema.md. Historical metric values remain synthetic despite their actual on-chain storage. Public deployment and deployed independent embed verification remain pending.
 
 Browser tests use explicitly labeled offline RPC fixtures for populated charts and sharing. For the suite:
 
@@ -89,7 +96,18 @@ MCP is an additional observation surface, not a dataset API: its reviewed `verif
 
 ## Remaining roadmap
 
-Publish a dashboard against selected existing public records, capture its transaction receipt, independently verify live share/embed, deploy with the user's approval, and record the <=3-minute video and submission evidence. No seed step is needed. Verified check results are recorded in HISTORY. Resizing and multiple queries remain optional extensions to the documented v1 contract.
+Use the verified populated publisher dashboard for final live share/embed and approved public deployment, then record the <=3-minute video and submission evidence. No additional publication or seed step is required to reuse that existing definition. Verified check results are recorded in HISTORY. Resizing and multiple queries remain optional extensions to the documented v1 contract.
+
+For a portable starting point, import [examples/public-dashboard.json](examples/public-dashboard.json) in Dashboard builder. It uses no filters, a 50-record page, a count KPI and a table of canonical creator/expiry metadata; its final preview returned 50 actual records at block 636023 on 16 October. It is an **unpublished definition**, not an on-chain dashboard. Review it before approving any wallet transaction.
+
+Read-only evidence commands:
+
+```sh
+npm run verify:dashboard -- --definition examples/public-dashboard.json
+npm run verify:dashboard -- --key <actual-dashboard-entity-key> --out arkiv/new-dashboard-evidence.json
+```
+
+The verifier checks the network, definition, query, canonical metadata and creation receipt for a published key. It reads only the entity's creation block, validates the engine event and sender, and never signs or broadcasts. Output files must be new paths to preserve prior observations. Evidence omits payload text and table rows. This does not prove hosted browser or iframe behavior.
 
 Use [the release checklist](RELEASE.md) for public-data reproduction, wallet publication and deployment preparation. [The submission draft](SUBMISSION.md) explicitly marks missing public evidence; [the timed demo script](DEMO.md) is ready for recording after live verification. GitHub Actions runs lint, types, unit tests, production build and offline browser checks when the workflow is pushed.
 
